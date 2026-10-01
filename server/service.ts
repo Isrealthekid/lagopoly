@@ -4,12 +4,12 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { dirname, resolve, extname } from 'node:path';
 import { getBoard } from '../src/data/boards';
-import { createGame, transition } from '../src/game/engine';
-import { decisionPlayer } from '../src/game/ai';
+import { addLog, createGame, transition } from '../src/game/engine';
+import { chooseAIAction, decisionPlayer } from '../src/game/ai';
 import type { Action, GameState } from '../src/game/types';
 
 type User = { id: string; username: string };
-type Member = User & { ready: boolean };
+type Member = User & { ready: boolean; left?: boolean };
 type Room = { code: string; host: string; public: boolean; cap: number; members: Member[]; game: GameState | null; revision: number; updated: number };
 export class HttpError extends Error { constructor(public status: number, message: string) { super(message); } }
 function assert(condition: unknown, status: number, message: string): asserts condition { if(!condition)throw new HttpError(status,message); }
@@ -75,10 +75,10 @@ export function createService(options: { database?: string; origin?: string; pro
   };
   const join=(room:Room,user:User)=>{
     room=roomByCode(room.code)!;assert(room,404,'This room has closed.');
-    if(room.members.some(m=>m.id===user.id))return view(room,user);
+    if(room.members.some(m=>m.id===user.id&&!m.left))return view(room,user);
     assert(!room.game,409,'This game has already started.');
     assert(room.members.length<room.cap,409,'This room is full.');
-    assert(!allRooms().some(r=>r.members.some(m=>m.id===user.id)),409,'Leave your current room before joining another.');
+    assert(!allRooms().some(r=>r.members.some(m=>m.id===user.id&&!m.left)),409,'Leave your current room before joining another.');
     room.members.push({...user,ready:false});room.revision++;store(room);return view(room,user);
   };
   const server=createServer(async(req,res)=>{
@@ -124,11 +124,11 @@ export function createService(options: { database?: string; origin?: string; pro
           if(token)db.prepare('DELETE FROM sessions WHERE token=?').run(hashToken(token));
           res.setHeader('Set-Cookie',`${cookieName}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${production?'; Secure':''}`);return json(res,200,{ok:true});
         }
-        if(route==='/api/rooms/mine'&&method==='GET')return json(res,200,{room:(()=>{const room=allRooms().find(r=>r.members.some(m=>m.id===user.id));return room?view(room,user):null;})()});
+        if(route==='/api/rooms/mine'&&method==='GET')return json(res,200,{room:(()=>{const room=allRooms().find(r=>r.members.some(m=>m.id===user.id&&!m.left));return room?view(room,user):null;})()});
         if(route==='/api/rooms'&&method==='GET')return json(res,200,{rooms:allRooms().filter(r=>r.public&&!r.game&&r.members.length<r.cap).slice(0,30).map(r=>({code:r.code,host:r.members.find(m=>m.id===r.host)?.username,count:r.members.length,cap:r.cap}))});
         if(route==='/api/rooms'&&method==='POST') {
           limit(`room:${user.id}`,10);
-          assert(!allRooms().some(r=>r.members.some(m=>m.id===user.id)),409,'You already have a room.');
+          assert(!allRooms().some(r=>r.members.some(m=>m.id===user.id&&!m.left)),409,'You already have a room.');
           const input=await body(req);assert(Number.isInteger(input.cap)&&Number(input.cap)>=2&&Number(input.cap)<=4,400,'Room limit must be 2-4 players.');
           const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let code='';
           do{code=Array.from({length:6},()=>alphabet[randomInt(alphabet.length)]).join('');}while(roomByCode(code)||completed.has(code));
@@ -146,6 +146,7 @@ export function createService(options: { database?: string; origin?: string; pro
         let room=roomByCode(code);
         if(!room) {
           const result=completed.get(code);
+          if(method==='POST'&&command==='leave'&&result&&result.room.members.some(m=>m.id===user.id)){await body(req);return json(res,200,{room:null});}
           if(method==='GET'&&result&&result.room.members.some(m=>m.id===user.id))return json(res,200,{room:view(result.room,user,true)});
           if(method==='POST'&&command==='action'&&result&&result.room.members.some(m=>m.id===user.id)) {
             const input=await body(req),action=input.action as Action,seat=result.room.members.findIndex(m=>m.id===user.id);
@@ -156,15 +157,22 @@ export function createService(options: { database?: string; origin?: string; pro
           throw new HttpError(404,'This room has closed or expired.');
         }
         if(command==='join'&&method==='POST'){await body(req);return json(res,200,{room:join(room,user)});}
-        let seat=room.members.findIndex(m=>m.id===user.id);assert(seat>=0,403,'You are not a member of this room.');
+        let seat=room.members.findIndex(m=>m.id===user.id&&!m.left);assert(seat>=0,403,'You are not a member of this room.');
         if(!command&&method==='GET')return json(res,200,{room:view(room,user)});
         assert(method==='POST',405,'Method not allowed.');
         const input=await body(req);
         room=roomByCode(code);assert(room,404,'This room has closed.');
-        seat=room.members.findIndex(m=>m.id===user.id);assert(seat>=0,403,'You are not a member of this room.');
+        seat=room.members.findIndex(m=>m.id===user.id&&!m.left);assert(seat>=0,403,'You are not a member of this room.');
         if(command==='ready') {assert(!room.game,409,'Game already started.');room.members[seat].ready=input.ready===true;}
         else if(command==='leave') {
-          assert(!room.game,409,'A live game cannot be abandoned. You can reconnect to this room.');
+          if(room.game){
+            room.members[seat].left=true;
+            room.game.aiPlayers=[...new Set([...(room.game.aiPlayers??[]),seat])];
+            addLog(room.game,`${user.username} left the game. AI now controls their seat.`,seat);
+            if(room.members.every(m=>m.left)){remove(code);return json(res,200,{room:null});}
+            if(room.host===user.id)room.host=room.members.find(m=>!m.left)!.id;
+            room.revision++;store(room);return json(res,200,{room:null});
+          }
           room.members.splice(seat,1);
           if(!room.members.length){remove(code);return json(res,200,{room:null});}
           if(room.host===user.id)room.host=room.members[0].id;
@@ -201,6 +209,16 @@ export function createService(options: { database?: string; origin?: string; pro
       if(!res.headersSent)json(res,error instanceof HttpError?error.status:500,{error:error instanceof HttpError?error.message:'The server could not complete this request.'});
     }
   });
+  const aiTimer=setInterval(()=>{
+    for(const room of allRooms()){
+      if(!room.game||room.game.phase==='won'||!room.game.aiPlayers?.includes(decisionPlayer(room.game)))continue;
+      try{
+        room.game=transition(room.game,chooseAIAction(room.game),dice);room.revision++;
+        if(room.game.phase==='won'){remove(room.code);completed.set(room.code,{room,expires:Date.now()+15*60000});}
+        else store(room);
+      }catch(error){console.error('Online AI move failed:',error);}
+    }
+  },650);aiTimer.unref();
   const timer=setInterval(cleanup,60000);timer.unref();cleanup();
-  return {server,db,close:()=>{clearInterval(timer);server.close();db.close();}};
+  return {server,db,close:()=>{clearInterval(timer);clearInterval(aiTimer);server.close();db.close();}};
 }

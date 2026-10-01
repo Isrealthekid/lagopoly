@@ -19,6 +19,27 @@ async function fixture(){
   return {service,request,account};
 }
 describe('secure accounts and authoritative rooms',()=>{
+  it('hands a departing seat to server AI, notifies others and frees their account',async()=>{
+    const {service,request,account}=await fixture();const a=await account('Ada'),b=await account('Tunde');
+    const created=await request('/api/rooms',{cap:2},a.cookie),code=created.body.room.code;
+    await request(`/api/rooms/${code}/join`,{},b.cookie);
+    await request(`/api/rooms/${code}/ready`,{ready:true},a.cookie);await request(`/api/rooms/${code}/ready`,{ready:true},b.cookie);
+    await request(`/api/rooms/${code}/start`,{},a.cookie);
+    const room=JSON.parse(service.db.prepare('SELECT payload FROM rooms WHERE code=?').get(code)!.payload as string);
+    room.game.current=0;room.game.phase='roll';
+    service.db.prepare('UPDATE rooms SET payload=? WHERE code=?').run(JSON.stringify(room),code);
+    expect((await request(`/api/rooms/${code}/leave`,{},a.cookie)).status).toBe(200);
+    const remaining=(await request(`/api/rooms/${code}`,undefined,b.cookie)).body.room;
+    expect(remaining.game.aiPlayers).toEqual([0]);expect(remaining.host).toBe(b.body.user.id);
+    expect(remaining.game.logs.some((l:{text:string})=>l.text.includes('Ada left the game'))).toBe(true);
+    expect((await request('/api/rooms/mine',undefined,a.cookie)).body.room).toBeNull();
+    expect((await request(`/api/rooms/${code}/action`,{revision:remaining.revision,action:{type:'roll'}},a.cookie)).status).toBe(403);
+    await new Promise(resolve=>setTimeout(resolve,750));
+    expect((await request(`/api/rooms/${code}`,undefined,b.cookie)).body.room.revision).toBeGreaterThan(remaining.revision);
+    expect((await request('/api/rooms',{cap:2},a.cookie)).status).toBe(201);
+    await request(`/api/rooms/${code}/leave`,{},b.cookie);
+    expect(service.db.prepare('SELECT code FROM rooms WHERE code=?').get(code)).toBeUndefined();
+  });
   it('serves the production website and issues secure HTTP-only cookies',async()=>{
     const folder=mkdtempSync(join(tmpdir(),'lag-board-test-'));staticFixtures.push(folder);writeFileSync(join(folder,'index.html'),'<title>MONOPOLY</title>');
     const service=createService({database:':memory:',production:true,origin:'https://game.example',staticDir:folder});services.push(service);

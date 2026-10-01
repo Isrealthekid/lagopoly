@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeftRight, ArrowRight, Building2, Check, CheckCircle2, ChevronDown, CircleHelp, CirclePlus, Dices, Download, Flag, House, Landmark, List, MapPin, Minus, Plus, RefreshCw, Save, Settings2, ShieldCheck, Trophy, Upload, Wallet, X } from 'lucide-react';
+import { ArrowLeftRight, ArrowRight, Building2, Check, CheckCircle2, ChevronDown, CircleHelp, CirclePlus, Dices, Download, Flag, House, Landmark, List, LogOut, MapPin, Minus, Plus, RefreshCw, Save, Settings2, ShieldCheck, Trophy, Upload, Wallet, X } from 'lucide-react';
 import { getBoard } from './data/boards';
 import { createSession, readSave, validateSave, type Session } from './game/session';
 import { assetActionError, compactMoney, fee, inventory, managementPlayer, money } from './game/engine';
@@ -110,9 +110,23 @@ export default function App() {
   const tradeBadge=unreadTrades.length>0?<span className={`trade-badge ${tradeStatus}`} aria-label={`${unreadTrades.length} trade notifications, ${tradeStatus}`}>{unreadTrades.length}</span>:null;
   const portfolio=game.players[portfolioPlayer??onlineRoom?.seat??actor];
   const openAssets=()=>{setTab('portfolio');setPortfolioPlayer(onlineRoom?.seat??actor);if(window.matchMedia('(max-width: 1000px)').matches)setMobileAssets(true);};
+  const exitGame=async()=>{
+    if(onlineRoom){
+      try{await api(`/rooms/${onlineRoom.code}/leave`,{});}catch(e){setError(e instanceof Error?e.message:'Could not leave the room.');return;}
+      session.stop();
+      const saved=readSave().save;
+      const next=saved?createSession(saved.state.G.boardId,saved.state.G.players.map(p=>p.name),saved.state.G.players.map(p=>p.token),saved):createSession('lagos',['Player 1','Player 2'],[0,1]);
+      setOnlineRoom(null);setSession(next);setGame(next.get());setStarted(!!saved);
+    }
+    setDetail(null);setTrade(false);setTradeInbox(false);setMobileAssets(false);
+    setRules(false);setSettings(false);setConfirmBankruptcy(false);setHub(false);
+    setSetup(true);
+  };
   return <FeedbackContext.Provider value={error}><div className="app-shell">
     <header className="app-header"><a className="wordmark" href="#" aria-label="MONOPOLY LAG-EDITION"><strong>MONOPOLY</strong><span className="wordmark-edition">LAG-EDITION</span></a><div className="header-center">{board.name} <span className="header-divider"/>{onlineRoom?`Room ${onlineRoom.code}`:game.aiPlayers?.length?'Computer opponents':'Pass & play'}</div><nav><button className="header-link account-button" title={account?.username??'Sign in'} onClick={()=>{setSetup(false);setHub(true);}}><ShieldCheck size={17}/><span>{account?.username??'Sign in'}</span></button><button className="header-link" onClick={()=>setRules(true)}><CircleHelp size={17}/><span>Rules</span></button><button className="icon-button" title="Table settings" aria-label="Table settings" onClick={()=>setSettings(true)}><Settings2 size={19}/></button><button className="new-game-button" onClick={()=>setSetup(true)}><CirclePlus size={17}/><span>New game</span></button></nav></header>
+    {started&&!setup&&<button className="exit-game-button secondary" onClick={exitGame} title="Return to game selection"><LogOut size={18}/> Exit game</button>}
     <main>
+      {onlineRoom&&!!game.aiPlayers?.length&&<p className="online-departure-notice" role="status">{game.aiPlayers.map(id=>game.players[id].name).join(', ')} left the game. Their {game.aiPlayers.length===1?'seat is':'seats are'} now controlled by AI.</p>}
       <div className="table-heading"><div><div className="eyebrow"><MapPin size={13}/> NIGERIA / {board.city.toUpperCase()}</div><h2>A city of possibilities.</h2></div><div className="table-status"><span className="turn-badge">TURN {game.turn.toString().padStart(2,'0')}</span><span className={`save-status ${saveError?'failed':''}`} title={saveError||'Saved in this browser'}>{saved?<CheckCircle2 size={14}/>:<Save size={14}/>}<span>{saveError?'Save unavailable':started?'Table saved':'New table'}</span></span></div></div>
       {error&&<div className="error-banner" role="alert"><span>{error}</span><button className="icon-button" aria-label="Dismiss message" onClick={()=>setError(null)}><X size={16}/></button></div>}
       {saveError&&<div className="error-banner" role="alert">{saveError}<button onClick={exportSave}><Download size={15}/> Download save</button></div>}
