@@ -1,0 +1,415 @@
+LAGOS PROPERTY GAME - LOCAL RULES, ASSETS, AND CARDS
+==================================================
+Version 1.1 - location groups and price bands revised
+
+1. THE LAGOS EDITION
+-------------------
+Become the last solvent investor by acquiring Lagos district assets,
+operating BRT transport assets, managing landmark venues, developing
+complete property groups, and collecting income from visiting players.
+
+This is a fictional game economy. Owning a space represents a game
+investment or operating concession, not ownership of a whole community
+or a real public building. Prices, fees, taxes, and events are invented
+for play. The board is not a geographical map or a transport timetable.
+
+The base rules retain the familiar property-trading structure. Local
+adaptations include naira currency, BRT assets instead of railroads,
+landmark-service assets instead of power/water utilities, automatic
+income collection, and Lagos-themed events.
+
+2. PLAYERS, BANK, AND STARTING CONDITIONS
+---------------------------------------
+- 2-4 players in the initial web version; all start at Eko Start.
+- Each starts with N1,500,000. N means Nigerian naira throughout.
+- Two six-sided dice; 32 development units and 12 flagship upgrades.
+- Separate 16-card Community Chest and Chance decks, shuffled once.
+- The game bank holds all unsold assets and processes transactions.
+- Bank cash is unlimited; the development-piece supply is limited.
+- Everyone rolls for starting order. Tied highest rollers reroll until
+  one wins; continue clockwise through the player list from that player.
+- Normal victory: the last player not declared bankrupt wins.
+
+3. THE COMPLETE 40-SPACE BOARD
+-----------------------------
+Positions are zero-based for implementation. All amounts are naira.
+An asset's purchase price is separate from income charged on landing.
+
+POS | SPACE                              | TYPE / GROUP | BUY OR PAY
+00  | Eko Start                          | Start        | Collect N200,000
+01  | Agric                              | Brown        | Buy N60,000
+02  | Personal Income Levy               | Levy         | Pay N200,000
+03  | Ogolonto                           | Brown        | Buy N80,000
+04  | Community Chest                    | Card         | Draw CC
+05  | Ikorodu Garage BRT                  | Transport    | Buy N200,000
+06  | Ketu                               | Light Blue   | Buy N100,000
+07  | Chance                             | Card         | Draw CH
+08  | Alapere                            | Light Blue   | Buy N100,000
+09  | Ojota                              | Light Blue   | Buy N120,000
+10  | Holding / Just Visiting            | Corner       | See section 10
+11  | Mushin                             | Pink         | Buy N140,000
+12  | National Theatre                   | Landmark     | Buy N150,000
+13  | Yaba                               | Pink         | Buy N140,000
+14  | Surulere                           | Pink         | Buy N160,000
+15  | Yaba BRT                           | Transport    | Buy N200,000
+16  | Mile 2                             | Orange       | Buy N180,000
+17  | Community Chest                    | Card         | Draw CC
+18  | Festac                             | Orange       | Buy N180,000
+19  | Badagry                            | Orange       | Buy N200,000
+20  | Owambe Break                       | Rest         | No payment
+21  | Ikeja                              | Red          | Buy N220,000
+22  | Chance                             | Card         | Draw CH
+23  | Ogba                               | Red          | Buy N220,000
+24  | Maryland                           | Red          | Buy N240,000
+25  | Marina BRT                         | Transport    | Buy N200,000
+26  | Gbagada                            | Yellow       | Buy N260,000
+27  | Ogudu                              | Yellow       | Buy N280,000
+28  | Tafawa Balewa Square                | Landmark     | Buy N150,000
+29  | Anthony                            | Yellow       | Buy N280,000
+30  | Go to Holding                      | Corner       | Direct transfer
+31  | Lekki                              | Green        | Buy N300,000
+32  | Ikoyi                              | Green        | Buy N320,000
+33  | Community Chest                    | Card         | Draw CC
+34  | Eko Atlantic                       | Green        | Buy N350,000
+35  | TBS BRT                            | Transport    | Buy N200,000
+36  | Chance                             | Card         | Draw CH
+37  | Bourdillon                         | Dark Blue    | Buy N380,000
+38  | Premium Asset Levy                 | Levy         | Pay N100,000
+39  | Banana Island                      | Dark Blue    | Buy N400,000
+
+Total: 22 group assets, 4 BRT assets, 2 landmark-service assets,
+6 card spaces, 2 levy spaces, and 4 corners = 40 spaces.
+
+COLOUR GROUPS AND PRICE BANDS
+Brown      | Cheap          | Agric, Ogolonto
+Light Blue | Lower midrange | Ketu, Alapere, Ojota
+Pink       | Midrange       | Mushin, Yaba, Surulere
+Orange     | Midrange       | Mile 2, Festac, Badagry
+Red        | High midrange  | Ikeja, Ogba, Maryland
+Yellow     | High midrange  | Gbagada, Ogudu, Anthony
+Green      | Expensive      | Lekki, Ikoyi, Eko Atlantic
+Dark Blue  | Most expensive | Bourdillon, Banana Island
+
+Your seven requested groups contain 19 property spaces. The additional
+Pink group contains Mushin, Yaba, and Surulere as mainland district assets,
+bringing the board to eight colour groups and 22 developable assets.
+Brown and Dark Blue each contain two assets;
+Yellow and Green each contain three. Completing a group requires every
+listed member, not an assumed standard group size.
+
+These are your requested proximity/cost groupings, not measured geographic
+clusters or real property valuations. The Badagry group represents a broad
+western corridor rather than immediate neighbours. Eko Atlantic shares
+the premium tier but is not immediately beside Banana Island/Bourdillon.
+Lekki and Ikoyi are broad island-side areas, rather than one neighbourhood.
+For the board label, "Lekki" means the Lekki Phase 1 area. Bourdillon means
+the Bourdillon Road area in Ikoyi. Its asset represents a distinct premium
+development, separate from the general Ikoyi asset and Banana Island.
+Agric and Ogolonto use your chosen spellings for the Ikorodu-area labels.
+Prices follow your requested tiers; their order within a group is a game
+balance choice and can be tuned after playtesting.
+
+Group colours identify sets, not residents or social status. Use separate
+icons for BRT and landmark assets so their colours cannot imply membership
+in a development group. The transport labels represent
+four fictional BRT game concessions inspired by the requested hubs,
+not four verified standalone routes or purchasable real operators.
+
+TBS means Tafawa Balewa Square. Position 28 is the venue concession;
+position 35 is the transport concession. They are distinct game assets.
+Agric at 01 and Ogolonto at 03 are separated by Income Levy at 02.
+Ikorodu Garage BRT at 05 remains a transport asset. Yaba district at 13
+and Yaba BRT at 15 are also distinct assets.
+National Theatre is retained as the familiar board label; its official
+site also identifies the complex as the Wole Soyinka Centre.
+
+4. TURNS, DICE, AND MOVEMENT
+--------------------------
+Roll, move clockwise by the dice total, then resolve the space completely.
+Players may occupy the same position. Collect N200,000 from the bank
+when passing or landing on Eko Start through forward movement.
+An exact landing gives N200,000, not twice that amount.
+
+Doubles allow another roll after resolving the landing. On a third
+consecutive double in the same turn, go straight to Holding before making
+that roll's normal move. Reset the doubles count when the turn ends.
+Any direct Holding instruction immediately ends the turn.
+
+After mandatory effects are settled, manage assets and finish the turn
+or take an earned extra roll. No rolling or ending a turn while a debt,
+auction, card effect, or required decision remains unresolved.
+
+5. BUYING AND AUCTIONS
+---------------------
+On an unowned purchasable space, buy from the bank at the listed price.
+If you decline or cannot afford it, an immediate auction follows.
+All solvent players may bid, including the player who declined.
+Opening/minimum bid is N1,000; subsequent bids increase by at least
+N1,000. This bidding increment is a local implementation choice.
+Bids must be backed by cash available at the time of bidding.
+Highest remaining bidder pays the bank and takes ownership.
+If everyone passes without bidding, the asset remains with the bank.
+
+6. GROUP-ASSET INCOME AND DEVELOPMENT
+------------------------------------
+Land on another player's unmortgaged asset and pay its scheduled income
+automatically. Land on your own asset and pay nothing.
+The whole colour group doubles the BASE fee of its undeveloped assets.
+Developed assets use their printed fee, without another doubling.
+Mortgaged assets earn nothing. An unmortgaged undeveloped asset still
+gets the group bonus if its owner holds every asset in the group.
+
+Each development unit represents residential/commercial improvement.
+
+The following table uses THOUSANDS OF NAIRA. A value of 750 means
+N750,000. Columns D1-D4 are development-unit counts; F is flagship.
+Mortgage value is half purchase price for every purchasable asset.
+
+ASSET                  | BASE | D1  | D2  | D3   | D4   | F    | UNIT COST
+Anthony                | 24   | 120 | 360 | 850  | 1025 | 1200 | 150
+Agric                  | 4    | 20  | 60  | 180  | 320  | 450  | 50
+Ogolonto               | 4    | 20  | 60  | 180  | 320  | 450  | 50
+Ketu                   | 6    | 30  | 90  | 270  | 400  | 550  | 50
+Alapere                | 6    | 30  | 90  | 270  | 400  | 550  | 50
+Ojota                  | 8    | 40  | 100 | 300  | 450  | 600  | 50
+Mushin                 | 10   | 50  | 150 | 450  | 625  | 750  | 100
+Yaba                   | 10   | 50  | 150 | 450  | 625  | 750  | 100
+Surulere               | 12   | 60  | 180 | 500  | 700  | 900  | 100
+Mile 2                 | 14   | 70  | 200 | 550  | 750  | 950  | 100
+Festac                 | 14   | 70  | 200 | 550  | 750  | 950  | 100
+Badagry                | 16   | 80  | 220 | 600  | 800  | 1000 | 100
+Ikeja                  | 18   | 90  | 250 | 700  | 875  | 1050 | 150
+Ogba                   | 18   | 90  | 250 | 700  | 875  | 1050 | 150
+Maryland               | 20   | 100 | 300 | 750  | 925  | 1100 | 150
+Gbagada                | 22   | 110 | 330 | 800  | 975  | 1150 | 150
+Ogudu                  | 24   | 120 | 360 | 850  | 1025 | 1200 | 150
+Lekki                  | 26   | 130 | 390 | 900  | 1100 | 1275 | 200
+Ikoyi                  | 28   | 150 | 450 | 1000 | 1200 | 1400 | 200
+Eko Atlantic           | 35   | 175 | 500 | 1100 | 1300 | 1500 | 200
+Bourdillon             | 40   | 180 | 550 | 1200 | 1500 | 1800 | 200
+Banana Island          | 50   | 200 | 600 | 1400 | 1700 | 2000 | 200
+
+Own a complete, unmortgaged group to develop it. Build evenly: asset
+levels in a group differ by at most one. A flagship counts as level 5.
+Maximum: four units or one flagship per asset. To upgrade, all assets
+in the group must have at least four units; pay one UNIT COST and return
+that asset's four units to the bank in exchange for a flagship.
+No development on BRT or landmark-service assets.
+
+Development transactions occur between resolved actions, including
+between players' turns; required debts and auctions take priority.
+Limited pieces cannot be replaced by imaginary units. If competing
+players request more available pieces than the bank has, auction those
+pieces using section 5's bidding rules.
+
+7. BRT TRANSPORT ASSETS
+----------------------
+Ikorodu Garage BRT, Yaba BRT, Marina BRT, and TBS BRT each cost N200,000.
+The landing fee depends on how many BRT assets the owner holds:
+1 = N25,000; 2 = N50,000; 3 = N100,000; 4 = N200,000.
+Mortgaged assets count toward ownership totals but earn no landing fee.
+No new buildings or additional dice rolls apply to ordinary BRT landings.
+Chance can specify twice the ordinary fee; it never charges on a mortgage.
+
+8. LANDMARK-SERVICE ASSETS: THE TWO UTILITY SLOTS
+-----------------------------------------------
+National Theatre and Tafawa Balewa Square each cost N150,000.
+They provide fictional cultural/event services, with a variable usage
+fee replacing the classic utility charge. They are not power or water
+utilities; this is an intentional Lagos game adaptation.
+
+If the opponent owns one landmark, pay arrival dice total x N4,000.
+If the opponent owns both, pay arrival dice total x N10,000.
+Example: a total of 7 costs N28,000 or N70,000 respectively.
+Count both holdings even if the other landmark is mortgaged; charge
+nothing if the destination itself is mortgaged.
+For a card arrival without a specified fee, roll a fresh fee-only total.
+A fee-only roll never moves the token or earns an extra roll.
+CH07 explicitly uses a fresh total x N10,000 regardless of holding count.
+
+9. MORTGAGES, SALES, AND TRADES
+-----------------------------
+Sell all development in a group before mortgaging any of its assets or
+transferring any of its assets to another player.
+Sell units back for half their UNIT COST, removing levels evenly.
+Downgrade a flagship to four units by receiving half its upgrade cost
+and taking four bank units; this requires sufficient available pieces.
+Alternatively liquidate all development in that group in one transaction:
+receive half each unit's cost, and half five UNIT COSTs for each flagship.
+This group-liquidation option avoids a shortage preventing debt payment.
+
+Mortgaging pays half the asset's purchase price; ownership stays with you.
+To redeem, pay that principal plus 10%. Example: a N200,000 BRT asset
+pays N100,000 when mortgaged and costs N110,000 to redeem.
+No player can redeem someone else's mortgage to claim their asset.
+
+Players may exchange cash, eligible assets, and unused release cards.
+No loans, rent immunity agreements, or promises of future payments.
+Trades need both players' acceptance and are executed atomically.
+Recheck cash, ownership, and mortgage charges when accepting a trade.
+An asset transfer with a mortgage requires its recipient to either:
+- Pay principal plus 10% immediately and redeem it; or
+- Pay 10% immediately, retain the mortgage, and later pay principal
+  plus another 10% when redeeming it.
+Transfers are not allowed while a mandatory debt remains unresolved.
+However, the debtor may offer asset sales to raise cash for that debt.
+
+10. HOLDING, LEVIES, AND OWAMBE BREAK
+-----------------------------------
+Holding is a fictional game detention space, not a named real facility.
+Enter through Go to Holding, a card, or the third consecutive double.
+Move directly to position 10, end the turn, and collect no Start reward
+for that transfer. Previously earned Start money is not taken back.
+Ordinary landing at 10 is Just Visiting and has no charge.
+
+On your turn in Holding, choose one of these before rolling:
+- Pay N50,000, then take a normal roll and turn.
+- Use a retained release card, then take a normal roll and turn.
+- Attempt doubles. Success releases you and moves by that total, with
+  no extra roll. Failure leaves you there and ends that turn.
+After the third failed attempt, pay N50,000 and move by that attempt's
+total. If unable to pay, resolve debt before movement.
+You may still receive income and perform permitted asset transactions.
+
+Personal Income Levy costs N200,000; Premium Asset Levy costs N100,000.
+These fixed game charges do not represent actual Lagos tax regulations.
+Owambe Break is a free rest space: no jackpot or extra turn.
+
+11. DEBT, BANKRUPTCY, AND VICTORY
+-------------------------------
+When cash is insufficient, pause normal play and allow the debtor to
+sell eligible assets, sell development, or mortgage assets. No new
+rolls or purchases until the obligation is settled.
+If the debtor cannot raise enough, declare bankruptcy.
+Debt to a player: return development for its half-cost proceeds, then
+transfer remaining cash, assets, and release cards to the creditor.
+The recipient resolves mortgage-transfer charges before play resumes;
+if unable, that recipient also enters debt resolution.
+Debt to the bank: return development and cards, remove mortgages,
+and auction each returned asset individually. The player is eliminated.
+For multi-player card transfers, settle opponents in clockwise order
+from the drawer; any bankruptcy is resolved against the current creditor.
+Return bank-recovered release cards to the bottom of their original decks.
+With one solvent player remaining, show that player's victory immediately.
+
+12. CARD PROCEDURE
+------------------
+Community Chest represents neighbourhood support and everyday expenses.
+Chance represents movement, opportunities, delays, and unexpected costs.
+Draw the top card, apply its entire effect, and return it to the bottom.
+Keep release cards out of circulation until used or transferred.
+Do not reshuffle after each draw. The two decks remain separate.
+
+All receipts/payments are with the bank unless an opponent is named.
+Forward movement collects N200,000 if it crosses or reaches Start.
+A card moving you to Start awards exactly N200,000 for that move, once.
+Direct Holding transfers and backward movement award no Start money.
+Resolve the destination after movement, including purchases, auctions,
+income, levies, or another card draw. A retained card is returned to
+its source deck only when used or recovered by the bank.
+For repair cards, a flagship counts only as a flagship, not four units.
+
+13. COMMUNITY CHEST - 16 ORIGINAL LAGOS CARDS
+-------------------------------------------
+CC01 | Your community project wraps up. Return to Eko Start (00) and
+       collect N200,000.
+CC02 | A duplicate payment is corrected. Receive N200,000.
+CC03 | Your household clinic bill is due. Pay N50,000.
+CC04 | Your weekend market stall makes a profit. Receive N50,000.
+CC05 | Your release paperwork is approved. Keep this Holding-release
+       card until needed; it may be traded.
+CC06 | An administrative hearing requires your attendance. Move
+       directly to Holding (10); no Start payment; end your turn.
+CC07 | Your ajo savings cycle pays out. Receive N100,000.
+CC08 | An overpaid neighbourhood contribution is refunded. Receive N20,000.
+CC09 | Friends celebrate your birthday. Each opponent pays you N10,000.
+CC10 | A cooperative dividend arrives. Receive N100,000.
+CC11 | An unexpected hospital bill arrives. Pay N100,000.
+CC12 | The new school term starts. Pay N50,000.
+CC13 | You help organise a residents' meeting. Receive N25,000.
+CC14 | Your estates need drainage maintenance. Pay N40,000 per unit
+       and N115,000 per flagship across all your assets.
+CC15 | Your community talent-show entry wins a prize. Receive N10,000.
+CC16 | A family support payment arrives. Receive N100,000.
+
+14. CHANCE - 16 ORIGINAL LAGOS CARDS
+----------------------------------
+CH01 | A waterfront viewing is booked. Advance to Banana Island (39).
+CH02 | Your next business cycle begins. Advance to Eko Start (00)
+       and collect N200,000.
+CH03 | A mainland investor wants a meeting. Advance to Maryland (24).
+CH04 | A business meeting calls. Advance to Yaba district (13).
+CH05 | Catch the next BRT. Advance to the next BRT asset clockwise;
+       if an opponent owns it unmortgaged, pay twice its normal fee.
+CH06 | An express commute gets you moving. Apply the same next-BRT
+       effect as CH05. This is a separate card in the deck.
+CH07 | An event booking opens up. Advance to the next landmark clockwise
+       (12 or 28). If opponent-owned and unmortgaged, roll fresh dice
+       and pay that total x N10,000. No extra turn from this fee roll.
+CH08 | Your small business pays a dividend. Receive N50,000.
+CH09 | Your case review clears you to leave. Keep this Holding-release
+       card until needed; it may be traded.
+CH10 | You missed your turning in traffic. Move back three spaces.
+CH11 | Your paperwork needs a formal review. Move directly to Holding
+       (10); no Start payment; end your turn.
+CH12 | Heavy rain leaves repairs to arrange. Pay N25,000 per development
+       unit and N100,000 per flagship across all your assets.
+CH13 | Your vehicle needs an unscheduled service. Pay N15,000.
+CH14 | Your commute starts at Ikorodu Garage. Advance to Ikorodu Garage
+       BRT (05), applying the ordinary BRT landing fee.
+CH15 | You sponsor a neighbourhood business gathering. Pay each
+       opponent N50,000.
+CH16 | A completed Lagos supply contract pays out. Receive N150,000.
+
+Unowned BRT/landmark destinations always offer purchase or auction.
+Your own or mortgaged destinations charge nothing, including CH05-CH07.
+If already on a named forward destination, a future card with that
+instruction would require a full clockwise circuit; current card-space
+positions do not create that case.
+
+15. WEB GAME REQUIREMENTS AND RULE CHECKS
+---------------------------------------
+Show the location, group, owner, price, fee table, mortgage, and development
+on each asset's detail panel. Use full names in details and shorter board
+labels where necessary. Keep group colours accompanied by written labels.
+Distinguish venue usage fees, transport fees, and district rent in logs.
+Bank payments and opponent payments must identify their recipients.
+
+Store positions, deck order, retained cards, cash, ownership, mortgages,
+piece supply, doubles count, Holding attempts, and pending decisions.
+Save after every accepted action. Restore unresolved debts and auctions.
+No dice animation, refresh, or repeated click may apply a payment twice.
+
+Required checks before calling this edition playable:
+- Exactly 40 positions; all 28 purchasable assets have valid data.
+- All requested locations, landmarks, and transport labels appear.
+- Colour-group membership follows section 3, including the revised
+  three-member Yellow/Green and two-member Brown/Dark Blue sets.
+- Complete groups double only undeveloped income.
+- BRT and landmark fee overrides respect mortgages and ownership.
+- Moving back from Chance 36 draws Community Chest at 33.
+- Forward cards across Start award once per qualifying movement.
+- Holding release rolls and fee-only rolls never earn extra rolls.
+- Development and liquidation preserve the limited-piece inventory.
+- Trades cannot spend cash twice or bypass group-building restrictions.
+- Bankruptcy and creditor mortgage charges can complete without deadlock.
+- Desktop/mobile layouts, save restoration, and full games work.
+
+16. LOCAL REFERENCES AND STATUS
+------------------------------
+This file is the proposed Lagos implementation specification. The earlier
+LAGOS_MONOPOLY_RULES_AND_CARDS.txt remains the classic reference.
+All local cards above are original proposed game text. Price tiers and
+the selected landmark-service mechanic require playtesting.
+
+Local context checked 30 September 2026:
+National Theatre official site (location and familiar/current naming):
+https://nationaltheatre.gov.ng/contacts
+https://nationaltheatre.gov.ng/about
+
+LAMATA (BRT background, including the Ikorodu corridor):
+https://lamata-ng.com/latest/bus-services/
+
+These references support local context, not invented ownership rights,
+fees, operating concessions, or any claim that all four game transport
+assets are separate real BRT lines.

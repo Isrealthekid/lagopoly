@@ -1,0 +1,186 @@
+CLASSIC MONOPOLY RULES AND CARDS - LAGOS DEVELOPMENT REFERENCE
+============================================================
+
+SCOPE
+-----
+This is a plain-language rules summary and a compact description of card
+effects, not a reproduction of the official rulebook or printed cards.
+The card baseline is the traditional US Classic deck used in 2008-2021.
+Later Community Chest decks and other country editions differ.
+Dollar amounts below are game money, retained for reference.
+Lagos locations and naira values have not yet been assigned.
+
+1. OBJECTIVE, EQUIPMENT, AND SETUP
+--------------------------------
+Win by being the last player who has not gone bankrupt.
+Use a 40-space board, two dice, tokens, property deeds, money,
+32 houses, 12 hotels, and separate 16-card Chance and Community Chest
+decks. Shuffle each deck separately and place it facedown.
+Each player starts on GO with $1,500. The bank holds unsold assets and
+handles payments and auctions; its funds are separate from player funds.
+The bank does not run out of money.
+Roll to determine the starting player; play proceeds clockwise.
+
+2. MOVEMENT AND BUYING
+---------------------
+Roll both dice, move clockwise by their total, and resolve the destination.
+Tokens may share spaces. Passing or landing on GO normally awards $200,
+not $400 for an exact landing.
+Doubles grant another roll after resolving the landing. A third
+consecutive double sends you directly to Jail before moving normally.
+Being sent to Jail ends the turn and awards no GO payment for that move.
+Buy an unowned property at its listed price or auction it immediately.
+Everyone, including the player who declined, may bid. Highest bidder pays
+the bank and receives ownership.
+
+3. RENT AND SPECIAL ASSETS
+-------------------------
+Pay the owner when landing on an opponent's unmortgaged property.
+Use its deed's rent schedule. Complete colour groups double undeveloped
+rent; developed properties use their building rent instead.
+Railroad rent is $25/$50/$100/$200 for ownership of 1/2/3/4 railroads.
+Utility rent is 4 times the arrival dice total for one utility, or 10 times
+for both. Certain Chance cards override these calculations.
+Mortgaged properties earn no rent. Other unmortgaged properties in a
+complete group still qualify for doubled undeveloped rent.
+The traditional rent-claim deadline is before the next dice roll.
+
+4. BUILDINGS AND TRADING
+-----------------------
+Own the entire colour group, with no mortgages in it, before building.
+Buy buildings from the bank at deed prices. Build evenly: development
+levels within a group may differ by at most one house.
+After four houses on every property in a group, replace four houses on
+a chosen property with one hotel and pay its listed upgrade cost.
+Maximum per property: four houses or one hotel. No buildings on railroads
+or utilities. Building is permitted on your turn or between turns.
+The physical building supply is limited; competing demands for scarce
+buildings are settled by auction.
+Sell buildings to the bank at half cost, reducing development evenly.
+A fully sold hotel returns half its upgrade cost plus half the cost of
+the four houses exchanged for it.
+Players may negotiate sales/trades of cash, undeveloped properties, and
+release cards. Remove every building in a colour group before trading
+a property from that group. Player-to-player loans are not allowed.
+
+5. MORTGAGES AND BANKRUPTCY
+--------------------------
+Sell all buildings in a group before mortgaging a property in it.
+Receive the mortgage amount printed on its deed; retain ownership.
+Repay principal plus 10% to restore rent collection.
+Under traditional mortgage-transfer rules, a recipient either repays
+principal plus 10% immediately, or pays 10% immediately and retains the
+mortgage. Later redemption then costs principal plus another 10%.
+Attempt permitted asset sales and mortgages before declaring bankruptcy.
+If still unable to settle a debt, leave the game.
+For debt to another player, sell buildings back at half cost and transfer
+remaining money, properties, and release cards to that creditor.
+Mortgage-transfer charges apply to inherited mortgages.
+For debt to the bank, return assets; the bank auctions the properties.
+
+6. JAIL, TAXES, AND CARDS
+------------------------
+Jail entry occurs through its instruction space, a card, or three doubles.
+Ordinary landing on Jail is just a visit.
+Leave by paying $50 before rolling, using a release card, or rolling
+doubles on one of up to three turns. Release doubles move you by that
+total but give no extra roll. After a third failed attempt, pay $50 and
+move using that attempt's total. Jail does not prevent rent collection,
+trading, mortgages, or permitted building transactions.
+For the modern classic baseline, Income Tax is $200 and Luxury Tax $100.
+Older boards used different taxes; do not mix their rules into this preset.
+Free Parking has no payment, prize, purchase, or penalty.
+Draw the top card of the indicated deck, resolve it, and return it to the
+bottom. Keep release cards until used or traded; return used cards to
+their original deck. Resolve any destination reached through a card.
+Fees go to the bank unless another recipient is specified.
+
+7. COMMUNITY CHEST: TRADITIONAL 16-CARD EFFECTS
+---------------------------------------------
+Receipts/payments involve the bank unless otherwise stated.
+
+CC01 | GO destination: receive $200.
+CC02 | Bank correction: receive $200.
+CC03 | Medical consultation: pay $50.
+CC04 | Stock-sale proceeds: receive $50.
+CC05 | Retain a Jail-release pass.
+CC06 | Direct Jail transfer; no GO reward.
+CC07 | Holiday savings payout: receive $100.
+CC08 | Tax reimbursement: receive $20.
+CC09 | Birthday: each opponent pays you $10.
+CC10 | Insurance payout: receive $100.
+CC11 | Hospital expense: pay $100.
+CC12 | Education expense: pay $50.
+CC13 | Consulting income: receive $25.
+CC14 | Street assessment: pay $40/house, $115/hotel.
+CC15 | Beauty-contest runner-up: receive $10.
+CC16 | Inheritance proceeds: receive $100.
+
+8. CHANCE: TRADITIONAL 16-CARD EFFECTS
+------------------------------------
+CH01 | Boardwalk destination.
+CH02 | GO destination; receive $200.
+CH03 | Illinois Avenue destination.
+CH04 | St. Charles Place destination.
+CH05 | Next railroad; double ordinary rent if owned.
+CH06 | Next railroad; identical effect, separate card.
+CH07 | Next utility; fresh dice total times 10 if owned.
+CH08 | Dividend receipt: $50 from bank.
+CH09 | Retain a Jail-release pass.
+CH10 | Retreat three spaces.
+CH11 | Direct Jail transfer; no GO reward.
+CH12 | Repairs: bank receives $25/house, $100/hotel.
+CH13 | Speeding penalty: bank receives $15.
+CH14 | Reading Railroad destination; ordinary rent.
+CH15 | Chairperson expense: pay every opponent $50.
+CH16 | Loan-maturity receipt: $150 from bank.
+
+Movement notes: advance clockwise and collect $200 when crossing GO,
+except direct Jail transfers. Resolve the destination. Unowned assets
+offer purchase or auction; mortgaged assets charge no rent. Retreating
+onto another card space triggers that deck. A hotel is counted as one
+hotel, not also four houses, when calculating repair assessments.
+
+9. APPLYING THIS TO LAGOS
+------------------------
+Keep this file as the classic reference. Create a separate Lagos rules
+file once local names, card stories, and prices are chosen.
+Map named destinations to fixed Lagos board positions, including the
+highest-priced property and designated transport asset.
+Replace card stories with original Lagos-themed situations while keeping
+their effect IDs, payment recipients, and duplicate railroad cards.
+If using N1,000 per reference dollar, multiply every cash value together:
+starting cash N1,500,000; GO N200,000; Jail fee N50,000. This proposed
+scale also applies to property prices, rents, buildings, and card effects.
+For utility rent, multiply the dice total by its rule multiplier and then
+by the currency scale. This conversion is game balancing, not an exchange
+rate or a claim about actual Lagos property values.
+For the web game, automatic rent collection is a proposed adaptation to
+the traditional rent-claim rule and should be disclosed in its rules.
+Keep Free Parking jackpots, skipped auctions, and double GO bonuses as
+optional house rules, not the standard preset.
+
+10. SOURCES AND EDITION NOTES
+-----------------------------
+Checked on 30 September 2026.
+
+Official Hasbro traditional rules: setup, turns, mortgages, bankruptcy.
+https://www.hasbro.com/common/instruct/Monopoly_Vintage.pdf
+
+Official Hasbro banking edition: building/trading procedures and shared
+classic mechanics. Its scaled currency is not used in this reference.
+https://www.hasbro.com/common/documents/dad288661c4311ddbd0b0800200c9a66/853107575056900B10958F63348CCD28.pdf
+
+Official Hasbro classic instructions: supplementary rules reference.
+https://www.hasbro.com/common/instruct/C00114.pdf
+
+Traditional 2008-2021 US card inventory (secondary reference):
+https://www.monopolyland.com/list-monopoly-chance-community-chest-cards/
+
+Chance-effect cross-check (secondary reference):
+https://monopolyclub.com/rules/classic/chance-community-chest-cards
+
+Edition details vary, including tax values, transfer interest, wording,
+and Community Chest stories. The vintage rulebook's optional percentage
+Income Tax is not adopted here. The selected traditional card list is
+not presented as the current Community Chest deck.

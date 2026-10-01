@@ -1,0 +1,24 @@
+.mode-tabs{display:flex;gap:4px;border-bottom:1px solid #deded8;margin-bottom:20px;padding-bottom:10px}
+.mode-tabs button{padding:9px 12px;border:0;background:transparent;font-size:12px;color:#65655b;border-bottom:2px solid transparent}
+.mode-tabs button[aria-pressed=true]{border-color:#cf262d;color:#b72027;font-weight:700}
+.account-form{display:grid;gap:18px}
+.account-form label,.room-create>label,.room-join label{display:grid;gap:8px;font-size:12px}
+.account-form input,.room-join input{width:100%;padding:12px;border:1px solid #d4d4cb;border-radius:4px;background:white}
+.account-row,.room-heading,.open-room-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.account-row>span,.room-heading>span{display:flex;align-items:center;gap:8px;font-size:13px}
+.room-heading h3{font-size:24px;letter-spacing:0}
+.room-members{padding:0;list-style:none;margin:0 0 20px}
+.room-members li{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:12px 0;border-bottom:1px solid #deded8}
+.room-members li>span:last-child{color:#20844e}
+.ready-toggle{display:flex;align-items:center;gap:10px;font-size:13px;margin:15px 0}
+.ready-toggle input{width:18px;height:18px;accent-color:#21824e}
+.room-create{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
+.room-create>.primary{grid-column:1/-1}
+.room-create select{padding:10px}
+.room-join{display:grid;grid-template-columns:1fr auto;align-items:end;gap:10px;margin:20px 0}
+.room-lobby .full{margin-bottom:12px}
+.open-rooms{display:grid;margin-top:14px}
+.open-room{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:14px 0;border:0;border-bottom:1px solid #deded8;background:none;text-align:left;font-size:12px}
+.waiting-player{font-size:13px;color:#78786d;padding:8px 0}
+.turn-actions[inert]{opacity:.6}
+@media(max-width:740px){.account-button span{display:none}.app-header nav{gap:4px}.app-header .wordmark strong{font-size:14px}.app-header .new-game-button{padding:6px}}

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.tsbuildinfo
+playwright-report/
+test-results/
+tests/*.png
+server-data/
+.env

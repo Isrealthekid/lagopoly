@@ -1,0 +1,80 @@
+MONOPOLY - LAG-EDITION: ACCOUNTS AND MULTIPLAYER
+
+IMPLEMENTED
+- Public username/password accounts, shared across browsers and devices through
+  the same account server. Usernames are case-insensitive and 3-20 characters.
+- Passwords are 12-128 characters, salted and hashed with scrypt. No plaintext
+  password or session token is stored in browser local storage.
+  Hash parameters are N=32768, r=8, p=3; earlier development hashes upgrade
+  automatically on successful login. Configuration reference:
+  https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+- A persistent HTTP-only SameSite cookie remembers sign-in for 30 days.
+  Signing out revokes that session. Other signed-in devices remain signed in.
+  Only public profile metadata is cached in local storage.
+- Private room codes, invite URLs (?room=ABC234), public room listings, and
+  random public-room joining. Hosts select a maximum of 2, 3, or 4 players.
+- The host starts after at least two players are ready. Joining after start is
+  blocked. An account can belong to one live/waiting room at a time.
+- The server owns all dice, deck order, moves, validation and game state.
+  Browsers poll for changes every second. Future card order is not exposed.
+- Refreshing or reopening reconnects a signed-in account to its current room.
+- Finished rooms are deleted immediately from the room database. Only their
+  final result remains in server memory for 15 minutes so every participant
+  can see the winner; new users cannot join the finished room.
+- Empty waiting rooms are deleted. Inactive waiting rooms expire after one
+  hour; live rooms expire after 48 hours without a game action. Disconnecting
+  does not forfeit a player; their turn waits for reconnection. Hosts transfer
+  automatically if they leave a waiting room. No mid-game voluntary forfeit
+  or turn timeout is provided in this first version.
+- Offline shared-device play and 1-3 balanced computer opponents. AI purchases,
+  bids, develops, handles debt and evaluates human trade offers. It does not
+  initiate trade proposals. Offline and AI games retain browser autosaves.
+
+LOCAL DEVELOPMENT (Node.js 24 REQUIRED)
+1. npm install
+2. npm run server  (account/room server on port 3001)
+3. npm start       (Vite website on port 5173, proxies /api to the server)
+4. Open http://localhost:5173 and choose Online or Sign in. Create an account.
+5. Use two separate browser profiles to test different players.
+   Sign in on another device with the same username/password for the same
+   account. localhost invite links only work on this machine, not the internet.
+
+INTERNET DEPLOYMENT
+The local implementation is functional but is NOT internet-hosted yet.
+Deploy ONE persistent Node.js server instance, not a static-only host or an
+ephemeral serverless function. The SQLite file must live on a persistent disk.
+Run npm ci and npm run build, then start npm run server with:
+  NODE_ENV=production
+  APP_ORIGIN=https://YOUR-GAME-DOMAIN
+  PORT=3001 (or the port assigned by your hosting service)
+  DATABASE_PATH=/persistent-data/accounts.sqlite
+The production server serves dist/ and /api from the same origin. Configure
+HTTPS at the hosting/reverse-proxy layer. APP_ORIGIN must exactly match the
+browser origin, without a trailing slash. Secure __Host- cookies require HTTPS.
+Never expose the development Vite server as the production website.
+
+Dockerfile and .dockerignore are supplied for a container host with a persistent
+/data volume. Configure APP_ORIGIN and HTTPS before accepting real accounts.
+Do not use multiple replicas sharing this SQLite file: this first release is
+single-instance. Back up the database using SQLite's backup facilities, protect
+disk access, and keep Node/dependencies updated before a public launch.
+
+SECURITY AND LIMITATIONS
+- Mutations require a same-origin Origin header and JSON body; rate limits
+  cover authentication, room creation and moves. SQL uses bound parameters.
+- The server checks room membership, player ownership and state revision.
+  Concurrent joins cannot exceed the cap. Stale moves are rejected.
+- Browser-supplied saves cannot replace an online game or control its RNG.
+- Password recovery is not available because accounts have no verified email.
+  Users should retain their password in a password manager. Add a verified
+  recovery mechanism before expanding to a public service.
+- Sessions expire after 30 days; clearing cookies requires signing in again.
+  Accounts survive room deletion and server restarts if the disk is persistent.
+- Offline saves are not synchronized across devices; online games are.
+- Automated tests are not a security audit. Review infrastructure, TLS, backup,
+  abuse controls and monitoring before inviting a large public audience.
+
+VERIFICATION
+npm test: rules, AI, authentication, concurrent capacity, authorization and
+finished-room cleanup. node tests/multiplayer-check.mjs: two-browser sign-up,
+invite joining, readiness, synchronized play, reconnect, and AI/mobile checks.

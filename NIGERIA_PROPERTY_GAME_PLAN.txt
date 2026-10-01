@@ -1,0 +1,292 @@
+NIGERIA PROPERTY TRADING GAME - WEB DEVELOPMENT PLAN
+==================================================
+
+1. PROJECT IDEA
+---------------
+Build a browser-based property trading board game inspired by Monopoly,
+with Nigerian locations, naira currency, and locally themed events.
+Players roll dice, move around a board, buy properties, collect rent,
+trade assets, develop property groups, and compete to remain solvent.
+
+Use an original working title such as "Naija Estates". Create original
+branding, board artwork, cards, and written rules. Treat the name as a
+placeholder until the final product identity is chosen.
+
+The game should work on desktop, tablets, and mobile browsers without
+requiring installation. This document is a development proposal; it does
+not implement the game or establish real property values.
+
+2. EDITIONS AVAILABLE FROM THE MENU
+----------------------------------
+The main menu should provide these actions:
+
+- New Game: choose an edition, players, and game settings.
+- Continue Game: restore a saved local game.
+- Play Online: create or join a private room in a later release.
+- Rules: view the game's published rules and local terminology.
+- Settings: adjust sound, animation, and accessibility preferences.
+
+Under New Game, offer:
+
+LAGOS EDITION
+An entire board using locations within Lagos. Suggested property names:
+Agege, Ikorodu, Egbeda, Iyana Ipaja, Oshodi, Mushin, Surulere, Yaba,
+Gbagada, Ogudu, Maryland, Ilupeju, Ikeja, Magodo, Ogba, Festac Town,
+Amuwo Odofin, Ajah, Sangotedo, Lekki, Victoria Island, and Ikoyi.
+
+ABUJA EDITION
+An entire board using Abuja/FCT locations. Suggested property names:
+Kubwa, Lugbe, Karu, Nyanya, Jikwoyi, Gwagwalada, Kuje, Bwari, Dutse,
+Gwarinpa, Life Camp, Lokogoma, Apo, Galadimawa, Gaduwa, Jabi, Utako,
+Wuye, Katampe, Wuse, Garki, and Maitama.
+
+LAGOS + ABUJA EDITION
+An optional later board combining selected locations from both editions.
+Mix both cities across price tiers so either city can appear throughout
+the board. Keep the same rules so players only learn one game system.
+
+These are candidate location lists, not a verified ranking of prestige,
+market prices, or investment potential. Final groupings should serve
+game balance and be reviewed by people familiar with each city.
+
+3. NEW GAME SETTINGS
+--------------------
+- Edition: Lagos, Abuja, or the later combined edition.
+- Mode: pass-and-play on one device; private online rooms later.
+- Players: 2-4 initially, with editable names and distinct tokens.
+- Computer opponents: optional after the core game works reliably.
+- Rules preset: Standard or Quick Game.
+- Starting cash: a balanced default, displayed in naira.
+- Turn timer: off for local play; optional for online play.
+- Sound and music: independent controls.
+
+Quick Game can use a turn limit and a predefined asset-value scoring
+system. Publish that scoring system before play starts. Keep optional
+house rules disabled by default and display enabled rules clearly.
+
+4. BOARD DESIGN AND LOCAL THEME
+-------------------------------
+Use a familiar square perimeter board with 40 spaces:
+
+- 22 purchasable properties in 8 colour groups.
+- 4 transport assets.
+- 2 utility assets.
+- 3 Community cards spaces.
+- 3 Opportunity cards spaces.
+- 2 levy/tax spaces.
+- 4 corner spaces: Start, Holding/Just Visiting, Rest Stop, Go to Holding.
+
+Transport assets could represent fictional transport businesses or hubs.
+Utilities could represent fictional power and water businesses. Use
+local themes without implying endorsement by real service operators.
+
+Example card themes:
+- Receive payment for a completed contract.
+- Pay for an unexpected vehicle repair.
+- Collect rental income from a side property.
+- Move to a specified district for a business opportunity.
+- Pay a maintenance charge based on your buildings.
+
+Cards must state exact effects: amount, destination, timing, and whether
+passing Start awards money. Keep humour welcoming and avoid portraying
+neighbourhoods or residents through stereotypes.
+
+Use simplified game prices rather than real estate estimates. For
+example, a property could cost N60,000-N400,000 and starting cash could
+be N1,500,000, subject to playtesting. Use consistent currency formatting
+and readable abbreviated amounts on compact board tiles.
+
+5. CORE GAMEPLAY AND RULE DECISIONS
+----------------------------------
+Before implementation, write a complete rules specification covering:
+
+1. Turn order, dice rolls, doubles, and movement around the board.
+2. Start payments and the exact conditions under which they apply.
+3. Buying unowned properties and auctioning declined purchases.
+4. Rent for properties, complete groups, transport, and utilities.
+5. Building requirements, even development, and building supply limits.
+6. Mortgages, mortgage repayment, and transfers of mortgaged assets.
+7. Trading cash, properties, and eligible cards between players.
+8. Holding entry, release choices, doubles, and release payments.
+9. Card draws, deck reshuffling, and cards retained by players.
+10. Raising money to settle debts and bankruptcy asset transfers.
+11. Victory conditions and the Quick Game scoring/tie-break rules.
+
+The bank should be a game system, not a player account. Payments must
+identify whether money goes to the bank or another player. Distinguish
+temporary cash shortages from bankruptcy: allow permitted sales and
+mortgages before eliminating a player.
+
+6. GAME SCREEN AND PLAYER EXPERIENCE
+------------------------------------
+DESKTOP
+- Board as the central visual focus.
+- Player panel with cash, assets, and current turn.
+- Action area for rolling, buying, auctioning, trading, and ending turns.
+- Event log showing recent rolls, purchases, rents, and card effects.
+
+MOBILE
+- A readable board overview with a focused view of the current space.
+- A bottom action area sized for touch input.
+- Property details and trades in separate panels or dialogs.
+- A compact player list with expandable asset details.
+
+Show only actions valid at the current stage of a turn. Prevent rolling
+again while an animation or required decision is in progress. Never
+allow End Turn while a payment, auction, or card effect is unresolved.
+
+Use colour plus labels or patterns for property groups. Provide keyboard
+navigation, visible focus, reduced motion, sound mute, readable contrast,
+and text announcements for important game events. Confirm destructive
+actions such as leaving a game or accepting a final trade.
+
+7. SUGGESTED TECHNICAL APPROACH
+------------------------------
+A practical starting stack is:
+
+- Frontend: React and TypeScript, built with Vite.
+- Board rendering: HTML/CSS for a clear, accessible 2D board.
+- Rules engine: a separate TypeScript module with no UI dependency.
+- Board definitions: structured data for each city edition.
+- Local saves: browser storage with versioned save files.
+- Online phase: Node.js server with Socket.IO and a persistent database.
+- Tests: unit tests for rules and browser tests for complete workflows.
+
+These are proposed choices, not dependencies already installed here.
+Confirm supported versions and evaluate maintained rule-engine libraries
+when implementation begins. Reuse a suitable proven engine if its rules,
+license, and integration fit; otherwise explicitly scope a custom engine
+and validate it against the written rules.
+
+Keep game rules independent of the visual board. A single engine should
+load either city's data without separate Lagos and Abuja logic.
+
+Suggested project structure:
+
+src/
+  app/                 Main menu, routes, and game setup
+  components/          Board, player panels, dialogs, and controls
+  game/                Rules, actions, validation, and turn progression
+  data/boards/         Lagos and Abuja definitions
+  data/cards/          Card decks and effects
+  storage/             Save loading, validation, and migrations
+  styles/              Layout, responsive design, and themes
+tests/
+  rules/               Movement, ownership, payments, and bankruptcy
+  browser/             Menu, gameplay, saves, and mobile workflows
+server/                Added when online multiplayer is developed
+
+8. GAME STATE AND ACTION PROCESSING
+-----------------------------------
+Store the complete game state in one serializable object containing:
+
+- Save format version, game ID, edition ID, and rules configuration.
+- Players, cash balances, positions, tokens, and elimination status.
+- Property owners, mortgages, and development levels.
+- Current player and turn phase.
+- Dice outcome, doubles count, and Holding status.
+- Ordered card decks and retained cards.
+- Available buildings, pending debt, auctions, and trade proposals.
+- Event history and a reproducible random generator state where needed.
+
+Express player intentions as actions, such as ROLL_DICE, BUY_PROPERTY,
+BID, MORTGAGE, PROPOSE_TRADE, ACCEPT_TRADE, and END_TURN.
+Validate each action against the active player, turn phase, available
+cash, and ownership before producing the next state.
+
+Example progression:
+Await roll -> Move -> Resolve space -> Resolve required decisions/debt
+-> Manage permitted assets -> End turn or resolve an extra roll.
+
+Animations display accepted outcomes. They must not determine balances,
+ownership, or the actual position of a player.
+
+9. SAVING AND ONLINE MULTIPLAYER
+--------------------------------
+FIRST RELEASE: LOCAL PLAY
+Autosave after every completed action. Restore the exact pending phase
+after refresh, including unresolved auctions and debts. Validate saves
+and give a clear recovery message when a save cannot be loaded. Local
+saves belong to that browser/device and can be lost if storage is cleared.
+
+LATER RELEASE: ONLINE PLAY
+Use a server-authoritative game: the server validates actions, rolls
+dice, draws cards, and broadcasts state updates. Clients send intentions
+rather than deciding their own results.
+
+Add private room codes, lobby readiness, player identity, reconnection,
+disconnect grace periods, and a published timeout policy. Give actions
+unique IDs to prevent retries charging rent or buying property twice.
+Persist games and define how a room resumes after a server restart.
+
+Never expose unrevealed deck order or random generator state to online
+clients. Share only information players are allowed to see. Use access
+checks, input validation, and rate limits for room and game actions.
+
+10. DEVELOPMENT PHASES AND ACCEPTANCE CRITERIA
+---------------------------------------------
+PHASE 1 - RULES AND BOARD DATA
+Choose the title, define both editions, write rules, and set initial
+prices and card effects. Complete when every space and action has a
+defined effect and each board has exactly 40 valid spaces.
+
+PHASE 2 - PLAYABLE LOCAL PROTOTYPE
+Build the menu, edition selector, player setup, board, dice, movement,
+buying, rent, and turn handling. Complete when 2-4 people can start and
+take valid turns on either board in one browser.
+
+PHASE 3 - COMPLETE LOCAL GAME
+Add auctions, buildings, mortgages, trades, cards, Holding, bankruptcy,
+victory, autosaves, and Quick Game. Complete when players can finish a
+game and restore interrupted games without changing their outcomes.
+
+PHASE 4 - USABILITY AND BALANCE
+Refine local artwork, tokens, animations, audio, mobile layout, and
+accessibility. Playtest both boards and tune economic values. Complete
+when desktop and mobile sessions work without blocked controls,
+unreadable spaces, overlapping text, or unexplained rule outcomes.
+
+PHASE 5 - ONLINE ROOMS
+Add the server, private lobbies, synchronization, persistence, and
+reconnection. Complete when separate devices can finish a game and
+recover from temporary disconnections without duplicate actions.
+
+PHASE 6 - OPTIONAL EXTENSIONS
+Add computer opponents, the combined board, public matchmaking, player
+accounts, cosmetics, or rankings only after the core game is stable.
+
+11. VERIFICATION PLAN
+---------------------
+Test rule boundaries, not just normal turns:
+
+- Crossing Start, exact landing, doubles, and repeated doubles.
+- Insufficient cash, required payments, and bankruptcy to each creditor.
+- Declined purchases, auction ties, bidding, and player eligibility.
+- Complete groups, uneven building attempts, and depleted building supply.
+- Mortgaged assets, building restrictions, and mortgage transfers.
+- Card movement, deck exhaustion, and retained-card return rules.
+- Trade acceptance after the proposed assets have changed.
+- Refreshing during a pending decision and loading older save versions.
+- Duplicate, late, and unauthorized actions in online rooms.
+
+Run browser checks for both editions at desktop and phone sizes. Check
+keyboard operation, reduced motion, visual rendering, and a full game
+from setup to victory. Use seeded scenarios to reproduce rule failures.
+
+12. DEPLOYMENT AND DELIVERABLES
+-------------------------------
+The local-play version can be deployed as a static website over HTTPS.
+Online play additionally needs a service supporting persistent socket
+connections and a database. Select hosting after these requirements and
+the expected player count are known.
+
+Expected deliverables:
+- Source code and dependency lockfile.
+- Lagos and Abuja board data and original visual assets.
+- Written rules and game balance configuration.
+- Automated rule checks and essential browser workflow checks.
+- Setup/deployment instructions and a playable browser URL.
+
+Recommended first milestone: a complete local pass-and-play game with
+Lagos and Abuja selectable from the same menu. This establishes the
+rules and player experience before adding online networking complexity.
