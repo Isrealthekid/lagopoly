@@ -1,5 +1,5 @@
 {
-  "name": "lagopoly.oluwoleisreal12.workers.dev",
+  "name": "lagopoly",
   "main": "worker/index.js",
   "compatibility_date": "2026-10-02",
   "keep_vars": true,
