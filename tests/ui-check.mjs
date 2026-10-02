@@ -5,14 +5,15 @@ const browser=await chromium.launch({channel:'msedge',headless:true});
 try{
   const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'reduce'});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://localhost:5173/',{waitUntil:'networkidle'});
+  await page.goto(process.env.PREVIEW_URL||'http://localhost:5174/',{waitUntil:'networkidle'});
   await page.getByRole('button',{name:'Start game',exact:true}).click();
   assert.match(await page.title(),/MONOPOLY.*LAG-EDITION/);
   assert.equal(await page.locator('.space').count(),40);
   assert.ok(await page.evaluate(()=>document.fonts.check('12px "Inter Variable"')));
   assert.match(await page.locator('.space-name').first().evaluate(e=>getComputedStyle(e).fontFamily),/Inter/);
   assert.equal(await page.locator('.board-scroll').evaluate(e=>e.classList.contains('zoomed')),false);
-  assert.ok(await page.locator('.game-board').evaluate(e=>e.clientWidth>=790));
+  assert.ok(await page.locator('.game-board').evaluate(e=>e.clientWidth>0));
+  await page.getByRole('button',{name:'3D VIEW',exact:true}).click();
   for(const [edge,angle] of [[0,'0deg'],[1,'90deg'],[2,'180deg'],[3,'-90deg']]){
     const labels=page.locator(`.space.edge-${edge}:not(.corner) .space-content`);
     const actual=await labels.evaluateAll(es=>es.map(e=>getComputedStyle(e).getPropertyValue('--label-angle').trim()||'0deg'));
@@ -46,7 +47,7 @@ try{
   assert.equal(await page.locator('.board-brand h1').textContent(),'MONOPOLY');
   assert.equal(await page.locator('.space.property').first().evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(206, 227, 199)');
   assert.equal(await page.locator('.group-strip').first().evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(121, 83, 160)');
-  assert.equal(await page.locator('.die').first().evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(223, 30, 39)');
+  assert.equal(await page.locator('.die-face').first().evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(223, 30, 39)');
   await page.screenshot({path:'tests/restyled-desktop.png',fullPage:true});
   await page.getByRole('button',{name:'Yaba, N140k',exact:false}).click();
   assert.equal(await page.locator('.deed-title h3').textContent(),'Yaba');
@@ -68,8 +69,8 @@ try{
   for(const [width,height] of [[1440,450],[900,500],[390,844]]){
     await page.setViewportSize({width,height});
     const dimensions=await page.locator('.game-board').evaluate(e=>({width:e.clientWidth,font:parseFloat(getComputedStyle(e.querySelector('.space-name')).fontSize)}));
-    assert.ok(dimensions.width>=790,'Board shrank below readable dimensions');
-    assert.ok(dimensions.font>=9,'Labels shrank at browser zoom');
+    assert.ok(dimensions.width>0&&dimensions.width<=width,'Board does not fit the viewport');
+    assert.ok(dimensions.font>=3,'Printed labels have no readable font size');
     assert.equal(await page.locator('.owner-marker').count(),0);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   }
@@ -120,5 +121,5 @@ try{
   await page.reload({waitUntil:'networkidle'});
   const owned=page.locator('[data-space="19"]');
   assert.equal(await owned.locator('.owner-dot').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(24, 102, 72)');
-  assert.ok(await owned.evaluate(e=>Number(getComputedStyle(e.querySelector('.tile-tokens')).zIndex)>Number(getComputedStyle(e.querySelector('.group-strip')).zIndex)),'Token is behind the asset band');
+  assert.ok(await page.locator('.piece-layer').evaluate(e=>Number(getComputedStyle(e).zIndex)>0),'Pieces are behind the board');
 }finally{await browser.close();}

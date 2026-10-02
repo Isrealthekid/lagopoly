@@ -4,6 +4,7 @@ import { getBoard } from './data/boards';
 import { createSession, readSave, validateSave, type Session } from './game/session';
 import { assetActionError, compactMoney, fee, inventory, managementPlayer, money } from './game/engine';
 import type { Action, GameState, Space } from './game/types';
+import { PromptPresence } from './components/PromptPresence';
 import { Board, playerColors, Token, spaceIcon } from './components/Board';
 import { FeedbackContext, Modal } from './components/Modal';
 import { Setup } from './components/Setup';
@@ -25,6 +26,11 @@ export default function App() {
   const [rules,setRules] = useState(false), [settings,setSettings] = useState(false), [trade,setTrade] = useState(false);
   const [detail,setDetail] = useState<number|null>(null), [selected,setSelected] = useState(0);
   const [error,setError] = useState(initial.error), [saved,setSaved] = useState(false), [saveError,setSaveError] = useState<string|null>(null);
+  const [viewDepth,setViewDepth] = useState(true);
+  const [compact,setCompact] = useState(()=>window.matchMedia('(max-width:1100px)').matches);
+  const [arrived,setArrived] = useState(()=>initial.session.get().players.map(p=>p.position).join(','));
+  useEffect(()=>{const media=window.matchMedia('(max-width:1100px)');const update=()=>setCompact(media.matches);media.addEventListener('change',update);return ()=>media.removeEventListener('change',update);},[]);
+  const [moving,setMoving] = useState(false);
   const [rolling,setRolling] = useState(false), [tab,setTab] = useState<'activity'|'portfolio'>('activity');
   const [portfolioPlayer,setPortfolioPlayer] = useState<number|null>(null), [bid,setBid] = useState('1000');
   const [mobileAssets,setMobileAssets] = useState(false);
@@ -36,6 +42,8 @@ export default function App() {
   const board = getBoard(game.boardId), current = game.players[game.current];
   const actor = managementPlayer(game), pending = game.pendingCard ? [...board.community,...board.chance].find(c=>c.id===game.pendingCard) : null;
   const stock = inventory(game), space = board.spaces[selected];
+  const destinationReady=arrived===game.players.map(p=>p.position).join(',');
+  const showPrompt=!(compact&&viewDepth)||(!rolling&&!moving&&destinationReady&&(!['roll','manage'].includes(game.phase)||current.holding||game.transferCharges.length>0));
   useEffect(()=> {
     session.start();
     const unsub=session.subscribe(g=>setGame(g));
@@ -49,14 +57,21 @@ export default function App() {
   useEffect(()=>{ if(game.auction) setBid(String(game.auction.high+1000)); },[game.auction?.high,game.auction?.bidder]);
   useEffect(()=>()=>{if(timer.current)clearTimeout(timer.current);},[]);
   const send=(action:Action)=> {
-    if(rolling) return;
+    if(rolling||moving) return;
     const decision=decisionPlayer(game);
     if(action.type!=='readTradeNotifications'&&((onlineRoom&&decision!==onlineRoom.seat)||(!onlineRoom&&game.aiPlayers?.includes(decision)))){setError('Wait for the other player to finish their decision.');return false;}
     try { session.dispatch(action);setError(null); return true; } catch(e) { setError(e instanceof Error?e.message:'This action is unavailable.');return false; }
   };
-  const roll=()=> {
-    if(send({type:'roll'})&&motion&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {setRolling(true);timer.current=setTimeout(()=>setRolling(false),650);}
-  };
+  const roll=()=> { if(send({type:'roll'})&&motion&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){setRolling(true);if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>setRolling(false),1200);} };
+  const lastAnimatedRoll=useRef(game.logs.find(log=>/ rolls [1-6] \+ [1-6]\./.test(log.text))?.id);
+  useEffect(()=>{
+    const latest=game.logs.find(log=>/ rolls [1-6] \+ [1-6]\./.test(log.text))?.id;
+    if(latest===lastAnimatedRoll.current)return;
+    lastAnimatedRoll.current=latest;
+    if(!latest||!motion||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    if(timer.current)clearTimeout(timer.current);
+    setRolling(true);timer.current=setTimeout(()=>setRolling(false),1200);
+  },[game.logs,motion]);
   const start=(boardId:string,names:string[],tokens:number[],aiPlayers:number[]=[])=> {
     if(timer.current)clearTimeout(timer.current);setRolling(false);
     const next=createSession(boardId,names,tokens,undefined,aiPlayers);setOnlineRoom(null);setSession(next);setGame(next.get());setStarted(true);setSetup(false);setDetail(null);setPortfolioPlayer(null);setError(null);
@@ -81,10 +96,10 @@ export default function App() {
     return ()=>{live=false;};
   },[startOnline]);
   useEffect(()=>{
-    if(!started||setup||onlineRoom||rolling||game.phase==='won'||!game.aiPlayers?.includes(decisionPlayer(game)))return;
+    if(!started||setup||onlineRoom||rolling||moving||game.phase==='won'||!game.aiPlayers?.includes(decisionPlayer(game)))return;
     const timeout=setTimeout(()=>{try{session.dispatch(chooseAIAction(game));setError(null);}catch(e){setError(e instanceof Error?e.message:'Computer move failed.');}},650);
     return ()=>clearTimeout(timeout);
-  },[game,session,started,setup,onlineRoom,rolling]);
+  },[game,session,started,setup,onlineRoom,rolling,moving]);
   const exportSave=()=> {
     try {
       const state=session.get();
@@ -130,37 +145,38 @@ export default function App() {
       <div className="table-heading"><div><div className="eyebrow"><MapPin size={13}/> NIGERIA / {board.city.toUpperCase()}</div><h2>A city of possibilities.</h2></div><div className="table-status"><span className="turn-badge">TURN {game.turn.toString().padStart(2,'0')}</span><span className={`save-status ${saveError?'failed':''}`} title={saveError||'Saved in this browser'}>{saved?<CheckCircle2 size={14}/>:<Save size={14}/>}<span>{saveError?'Save unavailable':started?'Table saved':'New table'}</span></span></div></div>
       {error&&<div className="error-banner" role="alert"><span>{error}</span><button className="icon-button" aria-label="Dismiss message" onClick={()=>setError(null)}><X size={16}/></button></div>}
       {saveError&&<div className="error-banner" role="alert">{saveError}<button onClick={exportSave}><Download size={15}/> Download save</button></div>}
+      <div className="scene-wallet"><span className="scene-player-dot" style={{background:playerColors[current.id]}}/><span>{current.name}<small>{board.spaces[current.position].short||board.spaces[current.position].name}</small></span><strong>{money(current.cash)}</strong><span className="scene-turn">TURN {game.turn}</span></div>
       <div className="table-layout">
-        <section className="board-section"><Board board={board} game={game} selected={selected} select={openSpace} rolling={rolling}/><div className="board-footnote"><span><ShieldCheck size={14}/> LOCAL TABLE</span><span>{stock.houses} units <span className="separator-dot"/> {stock.hotels} flagships in bank</span><span>{game.players.filter(p=>!p.bankrupt).length} players</span></div></section>
-        <aside className={`table-sidebar phase-${game.phase} ${game.transferCharges.length ? 'has-transfer' : ''} ${current.holding ? 'in-holding' : ''}`}>
+        <section className="board-section"><Board board={board} game={game} selected={selected} select={openSpace} rolling={rolling} motion={motion} onMoving={setMoving} onArrived={setArrived} onViewChange={setViewDepth}/><div className="board-footnote"><span><ShieldCheck size={14}/> LOCAL TABLE</span><span>{stock.houses} units <span className="separator-dot"/> {stock.hotels} flagships in bank</span><span>{game.players.filter(p=>!p.bankrupt).length} players</span></div></section>
+        <PromptPresence visible={showPrompt} motion={motion}><aside className={`table-sidebar phase-${game.phase} ${game.transferCharges.length ? 'has-transfer' : ''} ${current.holding ? 'in-holding' : ''}`}>
           <section className="turn-section"><div className="section-caption"><span>{game.phase==='auction'?'AT AUCTION':game.phase==='debt'?'PAYMENT DUE':game.phase==='won'?'THE WINNER':'YOUR MOVE'}</span><span className="phase-label">{game.phase==='roll'?'Roll the dice':game.phase==='manage'?'Manage & finish':game.phase==='buy'?'New opportunity':game.phase==='card'?'A twist in the tale':game.phase==='trade'?'Trade proposal':''}</span></div>
             <div className="current-player"><span className="player-avatar large" style={{background:`${playerColors[game.phase==='auction'?game.auction!.bidder:actor]}14`}}><Token token={game.players[game.phase==='auction'?game.auction!.bidder:actor].token} color={playerColors[game.phase==='auction'?game.auction!.bidder:actor]} size={29}/></span><div><h3>{game.players[game.phase==='auction'?game.auction!.bidder:actor].name}</h3><p>{game.phase==='auction'?'Your bid':game.phase==='debt'?'Raise cash or settle':current.holding?'In Holding':board.spaces[current.position].name}</p></div><span className="player-number">0{(game.phase==='auction'?game.auction!.bidder:actor)+1}</span></div>
             {!canAct&&<p className="waiting-player" role="status">{onlineRoom?'Waiting for another player':'Computer is thinking...'}</p>}
-            <div className="turn-actions" aria-live="polite" inert={!canAct}>
+            <div className="turn-actions" aria-live="polite" hidden={rolling||moving||!destinationReady} inert={!canAct||rolling||moving||!destinationReady}>
               {game.transferCharges.length>0&&game.phase!=='debt'?<><h4>Inherited mortgage</h4><p>{board.spaces[game.transferCharges[0].space].name}</p><button className="primary" onClick={()=>send({type:'transfer',redeem:false})}>Keep mortgage · {compactMoney(board.spaces[game.transferCharges[0].space].price!*.05)}</button><button className="secondary" onClick={()=>send({type:'transfer',redeem:true})}>Redeem · {compactMoney(board.spaces[game.transferCharges[0].space].price!*.55)}</button></>:<>
-              {game.phase==='roll'&&<>{current.holding&&<div className="holding-options"><button className="secondary" onClick={()=>send({type:'release',method:'pay'})}>Pay N50k release</button><button className="secondary" disabled={!current.cards.length} onClick={()=>send({type:'release',method:'card'})}>Use release card</button></div>}<button className="primary roll-button" disabled={rolling||!started} onClick={roll}><Dices size={22}/>{rolling?'Rolling...':current.holding?'Try for doubles':'Roll dice'}<span>{current.holding?'':'Let\'s go'}</span></button></>}
-              {game.phase==='buy'&&<><div className="purchase-preview"><span className="asset-swatch" style={{background:board.spaces[current.position].group?board.groups[board.spaces[current.position].group!].color:'#467760'}}/>{spaceIcon(board.spaces[current.position])}<strong>{board.spaces[current.position].name}</strong><span>{money(board.spaces[current.position].price!)}</span></div><button className="primary" disabled={rolling||current.cash<board.spaces[current.position].price!} onClick={()=>send({type:'buy'})}><House size={18}/>Buy property</button><button className="text-action" disabled={rolling} onClick={()=>send({type:'auction'})}>Put up for auction <ArrowRight size={16}/></button></>}
-              {game.phase==='manage'&&<><p className="turn-message">{current.holding?'Your assets are still earning.':game.extraRoll?'Doubles! Another roll is yours.':'Your move is complete.'}</p><button className="primary" disabled={rolling} onClick={()=>send({type:'end'})}>{game.extraRoll?<Dices size={20}/>:<Check size={19}/>} {game.extraRoll?'Continue to extra roll':'End turn'}<ArrowRight size={17}/></button></>}
-              {game.phase==='card'&&pending&&<div className={`drawn-card ${pending.id.startsWith('CC')?'community':'chance'}`}><span className="eyebrow">{pending.id.startsWith('CC')?'COMMUNITY CHEST':'CHANCE'}</span><h4>{pending.title}</h4><p>{pending.text}</p><button className="primary" disabled={rolling} onClick={()=>send({type:'card'})}>Apply card <ArrowRight size={16}/></button></div>}
+              {game.phase==='roll'&&<>{current.holding&&<div className="holding-options"><button className="secondary" onClick={()=>send({type:'release',method:'pay'})}>Pay N50k release</button><button className="secondary" disabled={!current.cards.length} onClick={()=>send({type:'release',method:'card'})}>Use release card</button></div>}<button className="primary roll-button" disabled={rolling||moving||!started} onClick={roll}><Dices size={22}/>{rolling?'Rolling...':current.holding?'Try for doubles':'Roll dice'}<span>{current.holding?'':'Let\'s go'}</span></button></>}
+              {game.phase==='buy'&&<><div className="purchase-preview"><span className="asset-swatch" style={{background:board.spaces[current.position].group?board.groups[board.spaces[current.position].group!].color:'#467760'}}/>{spaceIcon(board.spaces[current.position])}<strong>{board.spaces[current.position].name}</strong><span>{money(board.spaces[current.position].price!)}</span></div><button className="primary" disabled={rolling||moving||current.cash<board.spaces[current.position].price!} onClick={()=>send({type:'buy'})}><House size={18}/>Buy property</button><button className="text-action" disabled={rolling||moving} onClick={()=>send({type:'auction'})}>Put up for auction <ArrowRight size={16}/></button></>}
+              {game.phase==='manage'&&<><p className="turn-message">{current.holding?'Your assets are still earning.':game.extraRoll?'Doubles! Another roll is yours.':'Your move is complete.'}</p><button className="primary" disabled={rolling||moving} onClick={()=>send({type:'end'})}>{game.extraRoll?<Dices size={20}/>:<Check size={19}/>} {game.extraRoll?'Continue to extra roll':'End turn'}<ArrowRight size={17}/></button></>}
+              {game.phase==='card'&&pending&&<div className={`drawn-card ${pending.id.startsWith('CC')?'community':'chance'}`}><span className="eyebrow">{pending.id.startsWith('CC')?'COMMUNITY CHEST':'CHANCE'}</span><h4>{pending.title}</h4><p>{pending.text}</p><button className="primary" disabled={rolling||moving} onClick={()=>send({type:'card'})}>Apply card <ArrowRight size={16}/></button></div>}
               {game.phase==='auction'&&game.auction&&<><div className="auction-info"><strong>{board.spaces[game.auction.space].name}</strong><p>{game.auction.leader===null?'No bids yet':`${game.players[game.auction.leader].name} leads at ${money(game.auction.high)}`}</p></div><label className="cash-field">Your bid (N)<input aria-label="Your bid" type="number" min={game.auction.high+1000} step={1000} value={bid} onChange={e=>setBid(e.target.value)}/></label><div className="action-pair"><button className="primary" onClick={()=>send({type:'bid',amount:Number(bid)})}>Bid</button><button className="secondary" onClick={()=>send({type:'pass'})}>Pass</button></div></>}
               {game.phase==='debt'&&<><div className="debt-info"><strong>{money(game.payments[0].amount)}</strong><p>{game.payments[0].reason} · {game.payments[0].to===null?'Bank':game.players[game.payments[0].to!].name}</p><span>Available: {money(game.players[actor].cash)}</span></div><button className="primary" disabled={game.players[actor].cash<game.payments[0].amount} onClick={()=>send({type:'settle'})}>Settle payment</button><button className="secondary" onClick={openAssets}>Manage debtor's assets</button><button className="text-action danger" onClick={()=>setConfirmBankruptcy(true)}>Declare bankruptcy</button></>}
               {game.phase==='trade'&&game.trade&&<><h4>{game.players[game.trade.to].name}, your decision</h4><TradeSummary game={game} board={board} /><button className="primary" onClick={()=>send({type:'acceptTrade'})}>Accept trade</button><button className="secondary" onClick={()=>send({type:'rejectTrade'})}>Decline trade</button></>}
               {game.phase==='won'&&<div className="win-panel"><Trophy size={38}/><h4>{game.players[game.winner!].name} wins!</h4><p>The {board.city} estate is yours.</p><button className="primary" onClick={()=>setSetup(true)}>Play again</button></div>}
               </>}
             </div>
-            <div className="table-tools"><button className="trade-button" disabled={(!canTrade&&!tradeNotices.length&&!game.trade)||rolling||!started} onClick={openTrade}><ArrowLeftRight size={17}/> Trade{tradeBadge}</button><button disabled={!started} onClick={openAssets}><Building2 size={17}/> My assets</button></div>
+            <div className="table-tools"><button className="trade-button" disabled={(!canTrade&&!tradeNotices.length&&!game.trade)||rolling||moving||!started} onClick={openTrade}><ArrowLeftRight size={17}/> Trade{tradeBadge}</button><button disabled={!started} onClick={openAssets}><Building2 size={17}/> My assets</button></div>
           </section>
           <section className="players-section"><div className="section-caption"><span>AROUND THE TABLE</span><span>{game.players.length} players</span></div><div className="players-list">{game.players.map(p=><button className={`player-row ${p.id===game.current?'active':''} ${p.bankrupt?'eliminated':''}`} key={p.id} onClick={()=>{setPortfolioPlayer(p.id);setTab('portfolio');}}><span className="player-avatar" style={{background:`${playerColors[p.id]}12`}}><Token token={p.token} color={playerColors[p.id]} size={22}/></span><span className="player-info"><strong>{p.name}{p.id===game.current&&!p.bankrupt&&<span className="active-dot"/>}</strong><small>{p.bankrupt?'Bankrupt':`${Object.values(game.assets).filter(a=>a.owner===p.id).length} assets${p.holding?' · Holding':''}`}</small></span><span className="player-cash">{compactMoney(p.cash)}</span></button>)}</div></section>
           <section className="ledger-section"><div className="ledger-tabs" role="tablist" aria-label="Table ledger"><button role="tab" aria-selected={tab==='activity'} className={tab==='activity'?'active':''} onClick={()=>setTab('activity')}><List size={16}/> Activity</button><button role="tab" aria-selected={tab==='portfolio'} className={tab==='portfolio'?'active':''} onClick={()=>setTab('portfolio')}><Wallet size={16}/> Portfolio</button></div>
             {tab==='activity'?<div className="activity-feed" role="tabpanel">{game.logs.slice(0,12).map((log,i)=><div className={`activity-item ${i===0?'latest':''}`} key={log.id}><span className="log-dot" style={{background:log.player===null?'#b0b9b2':playerColors[log.player]}}/><p>{log.text}</p></div>)}</div>:<div className="portfolio" role="tabpanel"><select aria-label="Portfolio player" value={portfolio.id} onChange={e=>setPortfolioPlayer(+e.target.value)}>{game.players.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>{board.spaces.filter(s=>game.assets[s.id]?.owner===portfolio.id).map(s=><button key={s.id} className="portfolio-asset" onClick={()=>openSpace(s.id)}><span style={{background:s.group?board.groups[s.group].color:'#8b9b91'}}/><strong>{s.name}</strong><small>{game.assets[s.id].mortgaged?'Mortgaged':game.assets[s.id].level===5?'Flagship':game.assets[s.id].level?`${game.assets[s.id].level} units`:compactMoney(s.price!)}</small><ArrowRight size={14}/></button>)}{!Object.values(game.assets).some(a=>a.owner===portfolio.id)&&<div className="portfolio-empty"><House size={26}/><p>No assets yet.</p></div>}</div>}
           </section>
-        </aside>
+        </aside></PromptPresence>
       </div>
       <footer className="app-footer"><span>MONOPOLY <span className="separator-dot"/> LAG-EDITION</span><span>A little strategy. A lot of {board.city}.</span></footer>
       <nav className="mobile-game-actions" aria-label="Game actions">
-        <button className="primary" disabled={!canAct||!started||rolling||!['roll','manage'].includes(game.phase)||!!game.transferCharges.length} onClick={()=>game.phase==='roll'?roll():send({type:'end'})}>{game.phase==='manage'?<Check size={20}/>:<Dices size={20}/>}<span>{rolling?'Rolling...':game.phase==='manage'?game.extraRoll?'Roll again':'End turn':'Roll dice'}</span></button>
-        <button className="secondary" disabled={!started||rolling} onClick={()=>{setPortfolioPlayer(onlineRoom?.seat??actor);setMobileAssets(true);}}><Building2 size={20}/><span>My assets</span></button>
-        <button className="secondary trade-button" disabled={!started||(!canTrade&&!tradeNotices.length&&!game.trade)||rolling} onClick={openTrade}><ArrowLeftRight size={20}/><span>Trade</span>{tradeBadge}</button>
+        <button className="primary" disabled={!canAct||!started||rolling||moving||!['roll','manage'].includes(game.phase)||!!game.transferCharges.length} onClick={()=>game.phase==='roll'?roll():send({type:'end'})}>{game.phase==='manage'?<Check size={20}/>:<Dices size={20}/>}<span>{rolling?'Rolling...':moving||!destinationReady?'Moving...':game.phase==='manage'?game.extraRoll?'Roll again':'End turn':'Roll dice'}</span></button>
+        <button className="secondary" disabled={!started||rolling||moving} onClick={()=>{setPortfolioPlayer(onlineRoom?.seat??actor);setMobileAssets(true);}}><Building2 size={20}/><span>My assets</span></button>
+        <button className="secondary trade-button" disabled={!started||(!canTrade&&!tradeNotices.length&&!game.trade)||rolling||moving} onClick={openTrade}><ArrowLeftRight size={20}/><span>Trade</span>{tradeBadge}</button>
       </nav>
     </main>
     {setup&&<Setup start={start} username={account?.username} online={()=>{setSetup(false);setHub(true);}} close={started?()=>setSetup(false):undefined} hasGame={started}/ >}

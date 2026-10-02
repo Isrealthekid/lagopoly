@@ -7,6 +7,7 @@ import './classic-board.css';
 import '@fontsource-variable/inter';
 import './player-focus.css';
 import './multiplayer.css';
+import './board-depth.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode><App /></React.StrictMode>,
