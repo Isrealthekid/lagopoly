@@ -42,6 +42,7 @@ try {
  for(let i=0;i<25;i++){positions.add(await page.locator('.active-token').getAttribute('data-position'));await page.waitForTimeout(180);}
  assert.ok(positions.size>2,'No visible step-by-step movement');
  assert.notEqual(await page.locator('.dice-landing').first().getAttribute('style'),landing,'Dice landed at identical location');
+ await page.waitForFunction(()=>document.querySelector('.board-hint span')?.textContent==='',{},{timeout:10000});
  const game=await page.evaluate(()=>JSON.parse(localStorage.getItem('naija-estates.local.v1')).state.G);
  assert.equal(Number(await page.locator('.active-token').getAttribute('data-position')),game.players[game.current].position);
  console.log('Movement visited', [...positions], 'dice',game.dice);

@@ -65,7 +65,7 @@
 .board-section .board-footnote{padding-top:7px;flex-shrink:0}
 /* Volumetric player models. Each part has six independently lit faces. */
 .piece-layer{position:absolute;inset:0;pointer-events:none;transform-style:preserve-3d;transform:translateZ(4px);z-index:10}
-.board-section .game-board .tile-token.sculpted-token{position:absolute;display:block;width:32px;height:32px;margin:-16px 0 0 -16px;border:0;border-radius:0;background:none;box-shadow:none;transform:translateX(var(--seat-offset));transition:left .18s cubic-bezier(.3,.05,.3,1),top .18s cubic-bezier(.3,.05,.3,1);transform-style:preserve-3d}
+.board-section .game-board .tile-token.sculpted-token{position:absolute;display:block;width:32px;height:32px;margin:-16px 0 0 -16px;border:0;border-radius:0;background:none;box-shadow:none;transform:translateX(var(--seat-offset));transition:left .32s cubic-bezier(.4,0,.2,1),top .32s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d}
 .sculpture{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d;transform:scale(clamp(.55,.001,1));filter:none}
 .flat-view .sculpture{transform:rotateX(-28deg) rotateZ(-20deg) scale(calc(var(--piece-scale,1)*.8))}
 .depth-view .sculpture{transform:scale(var(--piece-scale,1))}
@@ -152,7 +152,7 @@
 }
 /* The mobile game is a full-screen scene with a floating HUD. */
 .scene-wallet{display:none}
-.depth-view .board-stage{transform:translate(var(--camera-x,0px),var(--camera-y,0px));transition:transform .2s cubic-bezier(.25,.65,.3,1);will-change:transform}
+.depth-view .board-stage{transform:translate(var(--camera-x,0px),var(--camera-y,0px));transition:transform .48s cubic-bezier(.22,.61,.36,1);will-change:transform}
 .reduced-motion .board-stage{transition:none}
 @media(max-width:1100px){
  .app-shell:has(.depth-view){position:relative;background:#a8d6c8}
@@ -232,3 +232,45 @@
 @media(prefers-reduced-motion:reduce){.prompt-presence{animation:none!important}}
 .no-prompt-motion{animation:none!important}
 @media(max-width:1100px) and (max-height:500px){.app-shell:has(.depth-view) .prompt-presence .table-sidebar{max-height:calc(100dvh - 190px)}}
+.purchase-actions{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0}
+.purchase-actions>.primary{width:auto;flex:1;min-width:0}
+.property-details-button{display:flex;align-items:center;justify-content:center;gap:5px;background:#237ac2;color:#fff;border:1px solid #1e6dae;border-radius:5px;box-shadow:0 2px 0 #16578d;padding:10px 12px;font-size:12px;font-weight:650;min-height:42px;flex-shrink:0}
+.property-details-button:hover:not(:disabled){background:#1969ad}
+@media(max-width:1100px){.app-shell:has(.depth-view) .prompt-presence .purchase-actions button{min-width:0;padding:7px 10px;align-self:stretch}.app-shell:has(.depth-view) .prompt-presence .purchase-actions>.primary{flex:0 1 auto}.app-shell:has(.depth-view) .prompt-presence .property-details-button{background:#237ac2;font-size:11px;min-height:30px}}
+/* Cast-metal tokens: cool silver, with a warm gold finish for the active piece. */
+.sculpture{--metal-light:#f5fafc;--metal-glint:#fff;--metal-mid:#a5b1b5;--metal-dark:#515e64;--metal-deep:#303d43}
+.active-token .sculpture{--metal-light:#ffedb2;--metal-glint:#fff9dc;--metal-mid:#d4a94c;--metal-dark:#94702b;--metal-deep:#61461d}
+.sculpture .model-part,.sculpture .model-part.base,.sculpture .model-part.glass,.sculpture .model-part.rubber,.sculpture .model-part.chrome,.sculpture .model-part.roof{--part-color:var(--metal-mid)}
+.sculpture .solid-face{filter:none;border:1px solid #ffffff45;box-shadow:inset 0 1px 1px #ffffff8c,inset 0 -1px 1px #0003;background:linear-gradient(120deg,var(--metal-dark) 0%,var(--metal-mid) 24%,var(--metal-light) 40%,var(--metal-glint) 46%,var(--metal-mid) 53%,var(--metal-dark) 100%)}
+.sculpture .solid-face.top{background:linear-gradient(135deg,var(--metal-mid) 0%,var(--metal-light) 23%,var(--metal-glint) 36%,var(--metal-mid) 43%,var(--metal-light) 64%,var(--metal-dark) 100%);border-color:#ffffff70}
+.sculpture .solid-face.front{background:linear-gradient(105deg,var(--metal-deep),var(--metal-mid) 22%,var(--metal-light) 36%,var(--metal-mid) 45%,var(--metal-dark) 82%)}
+.sculpture .solid-face.left,.sculpture .solid-face.back{background:linear-gradient(115deg,var(--metal-deep),var(--metal-dark) 35%,var(--metal-light) 47%,var(--metal-mid) 52%,var(--metal-dark) 72%)}
+.sculpture .solid-face.bottom{background:var(--metal-deep)}
+.sculpture .model-part.glass .solid-face{background:linear-gradient(120deg,var(--metal-deep),var(--metal-dark) 36%,var(--metal-light) 43%,var(--metal-mid) 51%,var(--metal-deep));border-color:var(--metal-mid)}
+.sculpture .model-part.rubber .solid-face{background:radial-gradient(ellipse at 30% 22%,var(--metal-light),var(--metal-mid) 28%,var(--metal-dark) 58%,var(--metal-deep));border-color:var(--metal-mid)}
+.sculpture .model-part.base .solid-face{border-color:var(--model-color)}
+.sculpture .model-part.base .solid-face.front,.sculpture .model-part.base .solid-face.back{box-shadow:inset 0 -2px 0 var(--model-color),inset 0 1px 1px #fff9}
+.sculpture .model-sail{background:linear-gradient(115deg,var(--metal-dark),var(--metal-light) 30%,var(--metal-glint) 43%,var(--metal-mid) 50%,var(--metal-dark));box-shadow:inset 0 1px 1px #fff}
+.model-0 .model-part.body .solid-face{border-radius:3px}
+.model-0 .model-part.glass .solid-face{border-radius:3px 3px 1px 1px}
+/* The setup choice applies to every piece; player identity stays on the base. */
+.sculpture.finish-silver{--metal-light:#f5fafc;--metal-glint:#fff;--metal-mid:#a5b1b5;--metal-dark:#515e64;--metal-deep:#303d43}
+.sculpture.finish-gold{--metal-light:#ffedb2;--metal-glint:#fff9dc;--metal-mid:#d4a94c;--metal-dark:#94702b;--metal-deep:#61461d}
+.artifact-finish-picker{border:1px solid #deded3;border-radius:10px;padding:12px;margin:0 0 20px}
+.artifact-finish-picker legend{padding:0 5px;font-size:13px;font-weight:750}
+.artifact-finish-picker p{font-size:11px;color:#7b8071;margin-bottom:10px}
+.artifact-finish-picker>div{display:flex;gap:10px}
+.artifact-finish-picker button{display:flex;align-items:center;justify-content:center;gap:8px;flex:1;padding:10px;border:1px solid #d2d7cf;border-radius:7px;background:#fff;font-size:12px;font-weight:650}
+.artifact-finish-picker button[aria-pressed=true]{border-color:#50765a;background:#f0f5e9;box-shadow:0 0 0 1px #50765a}
+.finish-swatch{width:24px;height:24px;border-radius:50%;border:1px solid #738083;box-shadow:inset 0 1px 2px #fffd,0 2px 2px #0002;background:linear-gradient(125deg,#5d696e,#eff7fa 38%,#fff 45%,#8a989e 58%,#c3cfd2 77%,#59686f)}
+.finish-swatch.gold{border-color:#a77e30;background:linear-gradient(125deg,#8a621a,#ffe8a0 38%,#fff7da 45%,#c79d40 58%,#f2cd71 77%,#926521)}
+.piece-motion{position:absolute;inset:0;transform-style:preserve-3d}
+.piece-moving .piece-motion{animation:piece-hop .32s ease-in-out infinite}
+.piece-step-ring{position:absolute;inset:0;border:2px solid #fffbd8;border-radius:50%;background:radial-gradient(circle,#fff4,transparent 65%);box-shadow:0 0 10px #ffe9a370;transform:translateZ(2px);pointer-events:none;animation:step-ripple .35s ease-out both}
+.piece-step-ring.landed{animation:arrival-ripple .55s ease-out both;border-color:#fff4bf}
+.piece-moving:after{content:"";position:absolute;inset:5px -9px;background:radial-gradient(ellipse,#ffe8a378,transparent 70%);transform:translateZ(1px);border-radius:50%;pointer-events:none}
+@keyframes piece-hop{0%,100%{transform:translateZ(0)}50%{transform:translateZ(7px)}}
+@keyframes step-ripple{from{opacity:.7;transform:translateZ(2px) scale(.55)}to{opacity:0;transform:translateZ(2px) scale(1.8)}}
+@keyframes arrival-ripple{from{opacity:.85;transform:translateZ(2px) scale(.7)}to{opacity:0;transform:translateZ(2px) scale(2.3)}}
+.reduced-motion .piece-motion{animation:none!important}.reduced-motion .piece-moving:after{display:none}
+@media(prefers-reduced-motion:reduce){.piece-motion,.piece-step-ring{animation:none!important}.piece-step-ring,.piece-moving:after{display:none}}

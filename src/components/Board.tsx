@@ -17,12 +17,14 @@ function coords(id: number) {
   if (id <= 30) return { gridRow: 1, gridColumn: id - 19 };
   return { gridRow: id - 29, gridColumn: 11 };
 }
-export function Board({ board, game, selected, select, rolling, motion, onMoving, onArrived, onViewChange }: { board: BoardDefinition; game: GameState; selected: number; select: (id: number) => void; rolling: boolean; motion: boolean; onMoving: (moving:boolean)=>void; onArrived:(positions:string)=>void; onViewChange:(depth:boolean)=>void }) {
+export function Board({ board, game, selected, select, rolling, motion, finish, onMoving, onArrived, onViewChange }: { board: BoardDefinition; game: GameState; selected: number; select: (id: number) => void; rolling: boolean; motion: boolean; finish:'silver'|'gold'; onMoving: (moving:boolean)=>void; onArrived:(positions:string)=>void; onViewChange:(depth:boolean)=>void }) {
   const current = game.players[game.current];
   const [depth,setDepth] = useState(true), [angle,setAngle] = useState(45);
   const [follow,setFollow] = useState(true);
   const [scene,setScene] = useState({size:760,width:390,height:844,mobile:window.innerWidth<=1100});
   const [positions,setPositions] = useState(()=>game.players.map(p=>p.position));
+  const [movingPieces,setMovingPieces]=useState<number[]>([]);
+  const [lastMoved,setLastMoved]=useState<number[]>([]);
   const positionsRef=useRef(positions);
   const previousGame=useRef(game);
   const stageRef=useRef<HTMLDivElement>(null);
@@ -36,10 +38,10 @@ export function Board({ board, game, selected, select, rolling, motion, onMoving
   const reduced=!motion || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const targets=game.players.map(p=>p.position).join(',');
   useEffect(()=>{
-    if(rolling)return;
+    if(rolling){setMovingPieces([]);return;}
     const from=positionsRef.current;
     const previous=previousGame.current;previousGame.current=game;
-    if(from.length!==game.players.length || previous.boardId!==game.boardId || game.sequence<previous.sequence || reduced){positionsRef.current=game.players.map(p=>p.position);setPositions(positionsRef.current);onMoving(false);onArrived(targets);return;}
+    if(from.length!==game.players.length || previous.boardId!==game.boardId || game.sequence<previous.sequence || reduced){positionsRef.current=game.players.map(p=>p.position);setPositions(positionsRef.current);setMovingPieces([]);onMoving(false);onArrived(targets);return;}
     const paths=game.players.map((p,i)=>{
       const start=from[i];if(start===p.position)return [];
       const card=[...board.community,...board.chance].find(c=>c.id===previous.pendingCard);
@@ -54,14 +56,15 @@ export function Board({ board, game, selected, select, rolling, motion, onMoving
       }
       return Array.from({length:count},(_,step)=>(start+(backwards?-1:1)*(step+1)+40)%40);
     });
-    const steps=Math.max(0,...paths.map(p=>p.length));if(!steps){onMoving(false);onArrived(targets);return;}
+    const steps=Math.max(0,...paths.map(p=>p.length));if(!steps){setMovingPieces([]);onMoving(false);onArrived(targets);return;}
+    const movingIds=game.players.filter((_,i)=>paths[i].length>0).map(p=>p.id);setMovingPieces(movingIds);setLastMoved(movingIds);
     onMoving(true);
     let step=0;
     const advance=()=>{positionsRef.current=game.players.map((p,i)=>paths[i][Math.min(step,paths[i].length-1)]??p.position);setPositions([...positionsRef.current]);step++;};
     const startTimer=setTimeout(advance,80);
-    const interval=setInterval(()=>{if(step<steps)advance();},180);
-    const finish=setTimeout(()=>{onMoving(false);onArrived(targets);},steps*180+220);
-    return ()=>{clearTimeout(startTimer);clearInterval(interval);clearTimeout(finish);};
+    const interval=setInterval(()=>{if(step<steps)advance();},320);
+    const finishTimer=setTimeout(()=>{setMovingPieces([]);onMoving(false);onArrived(targets);},steps*320+260);
+    return ()=>{clearTimeout(startTimer);clearInterval(interval);clearTimeout(finishTimer);};
   },[targets,rolling,reduced,game.boardId,onMoving,onArrived]);
   useEffect(()=>()=>onMoving(false),[onMoving]);
   const focus=rolling?{x:50,y:62}:piecePoint(positions[current.id]??current.position);
@@ -97,7 +100,7 @@ export function Board({ board, game, selected, select, rolling, motion, onMoving
     </div>
     <div className="piece-layer" aria-label="Player pieces">{game.players.filter(p=>!p.bankrupt).map(p=>{
       const point=piecePoint(positions[p.id]??p.position);
-      return <span key={p.id} data-player={p.id} data-position={positions[p.id]??p.position} className={`tile-token sculpted-token ${p.id===current.id?'active-token':''}`} style={{left:`${point.x}%`,top:`${point.y}%`,'--seat-offset':`${(p.id-1.5)*7}px`,'--token-color':playerColors[p.id]} as React.CSSProperties} title={`${p.name}: ${board.spaces[positions[p.id]??p.position].name}`}><Sculpture token={p.token} color={playerColors[p.id]} /><span className="piece-name">{p.name}</span></span>;
+      return <span key={p.id} data-player={p.id} data-position={positions[p.id]??p.position} className={`tile-token sculpted-token ${movingPieces.includes(p.id)?'piece-moving':''} ${p.id===current.id?'active-token':''}`} style={{left:`${point.x}%`,top:`${point.y}%`,'--seat-offset':`${(p.id-1.5)*7}px`,'--token-color':playerColors[p.id]} as React.CSSProperties} title={`${p.name}: ${board.spaces[positions[p.id]??p.position].name}`}>{lastMoved.includes(p.id)&&!reduced&&<i key={positions[p.id]} className={`piece-step-ring ${movingPieces.includes(p.id)?'travelling':'landed'}`} aria-hidden="true"/>}<span className="piece-motion"><Sculpture token={p.token} color={playerColors[p.id]} finish={finish} /></span><span className="piece-name">{p.name}</span></span>;
     })}</div>
   </div></div></div><div className="board-hint">{depth?'Drag to rotate · tap a space to inspect':'Tap a space to inspect'}<span>{rolling?'Rolling dice…':game.players.some(p=>positions[p.id]!==p.position)?'Moving…':''}</span></div></>;
 }

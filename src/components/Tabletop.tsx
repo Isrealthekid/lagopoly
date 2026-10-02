@@ -10,8 +10,8 @@ export function piecePoint(id:number) {
 function Solid({x=0,y=0,z=0,w=12,d=8,h=8,color='body',round=false}:{x?:number;y?:number;z?:number;w?:number;d?:number;h?:number;color?:string;round?:boolean}) {
  return <span className={`model-part ${color} ${round?'round':''}`} style={{'--w':`${w}px`,'--d':`${d}px`,'--h':`${h}px`,transform:`translate3d(${x}px,${y}px,${z+h/2}px)`} as React.CSSProperties}>{['front','back','left','right','top','bottom'].map(face=><i key={face} className={`solid-face ${face}`}/>)}</span>;
 }
-export function Sculpture({token,color}:{token:number;color:string}) {
- return <span className={`sculpture model-${token}`} style={{'--model-color':color} as React.CSSProperties} aria-hidden="true">
+export function Sculpture({token,color,finish}:{token:number;color:string;finish:'silver'|'gold'}) {
+ return <span className={`sculpture finish-${finish} model-${token}`} style={{'--model-color':color} as React.CSSProperties} aria-hidden="true">
    <Solid w={28} d={20} h={3} color="base" round/>
    {token===0&&<><Solid w={28} d={13} h={8} z={6}/><Solid w={14} d={12} h={8} z={14} color="glass"/>{[-9,9].flatMap(x=>[-7,7].map(y=><Solid key={`${x}-${y}`} x={x} y={y} z={3} w={6} d={3} h={7} color="rubber" round/>))}<Solid x={13} z={10} w={2} d={11} h={3} color="chrome"/></>}
    {token===1&&<><Solid w={28} d={12} h={7} z={4}/><Solid w={2} d={2} h={30} z={10} color="chrome"/><span className="model-sail"/><Solid w={21} d={14} h={2} z={10} color="chrome"/></>}
