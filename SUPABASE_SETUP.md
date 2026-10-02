@@ -21,7 +21,7 @@ The `monopoly` schema is private, not exposed through the Data API. Tables have 
 4. Remove `DATABASE_PATH` and the persistent disk only after existing data has been imported and the new deployment verified. Never delete the old database first.
 5. Check the backend's `/api/health`: it queries the database and must return `{"ok":true}`.
 
-TLS certificate verification is enabled. If the pooler's certificate needs Supabase's CA, download the certificate from Database Settings and set `SUPABASE_DB_CA_FILE` to its server-side file path. Do not disable verification.
+TLS certificate verification is enabled. If the pooler's certificate needs Supabase's CA, download the certificate from Database Settings and paste its complete PEM contents into the backend environment variable `SUPABASE_DB_CA`. Include the BEGIN CERTIFICATE and END CERTIFICATE lines. Save and redeploy the backend. Alternatively, set `SUPABASE_DB_CA_FILE` to its server-side file path. Do not disable verification.
 
 ## Cloudflare Workers (your current deployment)
 

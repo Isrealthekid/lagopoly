@@ -1,8 +1,8 @@
-import { expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { mkdtempSync, existsSync, unlinkSync, rmdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { openDatabase } from '../server/database';
+import { databaseTlsOptions, openDatabase } from '../server/database';
 it('rolls back partial writes and preserves sessions and room data across restarts',async()=>{
   const folder=mkdtempSync(join(tmpdir(),'monopoly-storage-')),file=join(folder,'accounts.sqlite');
   let db=openDatabase(file);
@@ -25,4 +25,13 @@ it('rolls back partial writes and preserves sessions and room data across restar
   }finally{
     await db.close();for(const suffix of ['','-wal','-shm'])if(existsSync(file+suffix))unlinkSync(file+suffix);rmdirSync(folder);
   }
+});
+
+afterEach(()=>vi.unstubAllEnvs());
+it('trusts the configured Supabase certificate while keeping TLS verification enabled',()=>{
+  vi.stubEnv('SUPABASE_DB_CA','-----BEGIN CERTIFICATE-----\\nexample\\n-----END CERTIFICATE-----');
+  const ssl=databaseTlsOptions();
+  expect(ssl.rejectUnauthorized).toBe(true);
+  expect(ssl.ca?.at(-1)).toBe('-----BEGIN CERTIFICATE-----\nexample\n-----END CERTIFICATE-----');
+  expect(ssl.ca!.length).toBeGreaterThan(1);
 });

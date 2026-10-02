@@ -3,6 +3,13 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import pg from 'pg';
+import { rootCertificates } from 'node:tls';
+
+export function databaseTlsOptions() {
+  const certificate=process.env.SUPABASE_DB_CA?.replace(/\\n/g,'\n') ??
+    (process.env.SUPABASE_DB_CA_FILE ? readFileSync(process.env.SUPABASE_DB_CA_FILE,'utf8') : undefined);
+  return {rejectUnauthorized:true,...(certificate ? {ca:[...rootCertificates,certificate]} : {})};
+}
 
 type Row = Record<string, unknown>;
 export interface Database {
@@ -16,7 +23,7 @@ export function openDatabase(connection: string): Database {
     // URL SSL parameters must not override verified TLS configuration.
     for(const name of ['ssl','sslmode','sslcert','sslkey','sslrootcert'])url.searchParams.delete(name);
     const pool = new pg.Pool({ connectionString: url.toString(), max: 5,
-      ssl: { rejectUnauthorized: true, ...(process.env.SUPABASE_DB_CA_FILE ? {ca: readFileSync(process.env.SUPABASE_DB_CA_FILE, 'utf8')} : {}) },
+      ssl: databaseTlsOptions(),
       connectionTimeoutMillis: 10000, statement_timeout: 15000 });
     const current = new AsyncLocalStorage<pg.PoolClient>();
     const query = async (sql: string, values: unknown[]) => {
