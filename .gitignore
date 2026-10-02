@@ -6,3 +6,4 @@ test-results/
 tests/*.png
 server-data/
 .env
+.env.example

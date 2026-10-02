@@ -3,7 +3,7 @@ MONOPOLY - LAG-EDITION: ACCOUNTS AND MULTIPLAYER
 IMPLEMENTED
 - Public username/password accounts, shared across browsers and devices through
   the same account server. Usernames are case-insensitive and 3-20 characters.
-- Passwords are 12-128 characters, salted and hashed with scrypt. No plaintext
+- Passwords are 8-128 characters, salted and hashed with scrypt. No plaintext
   password or session token is stored in browser local storage.
   Hash parameters are N=32768, r=8, p=3; earlier development hashes upgrade
   automatically on successful login. Configuration reference:
@@ -19,7 +19,7 @@ IMPLEMENTED
   Browsers poll for changes every second. Future card order is not exposed.
 - Refreshing or reopening reconnects a signed-in account to its current room.
 - Finished rooms are deleted immediately from the room database. Only their
-  final result remains in server memory for 15 minutes so every participant
+  final result remains in the database for 15 minutes so every participant
   can see the winner; new users cannot join the finished room.
 - Empty waiting rooms are deleted. Inactive waiting rooms expire after one
   hour; live rooms expire after 48 hours without a game action. Disconnecting
@@ -36,30 +36,20 @@ LOCAL DEVELOPMENT (Node.js 24 REQUIRED)
 1. npm install
 2. npm run server  (account/room server on port 3001)
 3. npm start       (Vite website on port 5173, proxies /api to the server)
-4. Open http://localhost:5173 and choose Online or Sign in. Create an account.
+4. Open http://localhost:5173 and choose Online multiplayer or Sign in. Create an account.
+   If Vite selects another port (for example 5174), restart the account server
+   with APP_ORIGIN matching that URL. In PowerShell:
+   $env:APP_ORIGIN="http://localhost:5174"
+   npm run server
 5. Use two separate browser profiles to test different players.
    Sign in on another device with the same username/password for the same
    account. localhost invite links only work on this machine, not the internet.
 
 INTERNET DEPLOYMENT
-The local implementation is functional but is NOT internet-hosted yet.
-Deploy ONE persistent Node.js server instance, not a static-only host or an
-ephemeral serverless function. The SQLite file must live on a persistent disk.
-Run npm ci and npm run build, then start npm run server with:
-  NODE_ENV=production
-  APP_ORIGIN=https://YOUR-GAME-DOMAIN
-  PORT=3001 (or the port assigned by your hosting service)
-  DATABASE_PATH=/persistent-data/accounts.sqlite
-The production server serves dist/ and /api from the same origin. Configure
-HTTPS at the hosting/reverse-proxy layer. APP_ORIGIN must exactly match the
-browser origin, without a trailing slash. Secure __Host- cookies require HTTPS.
-Never expose the development Vite server as the production website.
-
-Dockerfile and .dockerignore are supplied for a container host with a persistent
-/data volume. Configure APP_ORIGIN and HTTPS before accepting real accounts.
-Do not use multiple replicas sharing this SQLite file: this first release is
-single-instance. Back up the database using SQLite's backup facilities, protect
-disk access, and keep Node/dependencies updated before a public launch.
+Supabase PostgreSQL replaces the persistent SQLite disk in production.
+See SUPABASE_SETUP.md for project details, secrets, Cloudflare API routing,
+existing-account import, TLS and verification. The Node backend remains
+responsible for authentication and game rules; Supabase Auth is not enabled.
 
 SECURITY AND LIMITATIONS
 - Mutations require a same-origin Origin header and JSON body; rate limits

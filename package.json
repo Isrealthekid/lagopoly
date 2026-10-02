@@ -6,19 +6,22 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "start": "vite --host 0.0.0.0",
-    "server": "node --import tsx server/index.ts",
+    "server": "node --env-file-if-exists=.env --import tsx server/index.ts",
     "build": "tsc -b && vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "migrate:sqlite": "node --env-file-if-exists=.env --import tsx server/import-sqlite.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
     "boardgame.io": "^0.50.2",
     "lucide-react": "^0.468.0",
+    "pg": "8.23.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tsx": "^4.23.15"
   },
   "devDependencies": {
+    "@types/pg": "8.23.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",

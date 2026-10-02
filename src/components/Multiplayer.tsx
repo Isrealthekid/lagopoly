@@ -36,7 +36,7 @@ export function Multiplayer({account,onAccount,onGame,close,currentRoom}:{accoun
     {!account?<form className="account-form" onSubmit={e=>{e.preventDefault();void run(async()=>{const result=await api<{user:Account}>(register?'/register':'/login',{username,password});setPassword('');onAccount(result.user);});}}>
       <div className="mode-tabs"><button type="button" aria-pressed={!register} onClick={()=>setRegister(false)}>Sign in</button><button type="button" aria-pressed={register} onClick={()=>setRegister(true)}>Create account</button></div>
       <label>Public username<input autoComplete="username" required minLength={3} maxLength={20} pattern="[A-Za-z0-9_]+" value={username} onChange={e=>setUsername(e.target.value)}/></label>
-      <label>Password<input type="password" autoComplete={register?'new-password':'current-password'} required minLength={12} maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/></label>
+      <label>Password<input type="password" autoComplete={register?'new-password':'current-password'} required minLength={8} maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/></label>
       <button className="primary full" disabled={busy}><UserRound size={18}/>{busy?'Please wait...':register?'Create account':'Sign in'}</button>
     </form>:<>
       <div className="account-row"><span><UserRound size={18}/>{account.username}</span><button className="icon-button" title="Sign out" aria-label="Sign out" disabled={busy} onClick={()=>void run(async()=>{await api('/logout',{});onAccount(null);setRoom(null);})}><LogOut size={18}/></button></div>

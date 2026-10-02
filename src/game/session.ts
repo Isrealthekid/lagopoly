@@ -131,7 +131,7 @@ export function readSave(): { save: Saved | null; error: string | null } {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     return { save: raw ? validateSave(JSON.parse(raw)) : null, error: null };
-  } catch { return { save: null, error: 'The saved table could not be restored. Start a new table to continue.' }; }
+  } catch { return { save: null, error: 'The saved table could not be restored. Start a new game to continue.' }; }
 }
 
 export function createSession(boardId: string, names: string[], tokens: number[], saved?: Saved, aiPlayers: number[] = []) {

@@ -17,8 +17,8 @@ export function Setup({ start, close, hasGame, username, online, finish, changeF
     if(used.includes(tokens[count])) setTokens(tokens.map((token,index)=>index===count?tokenNames.findIndex((_,id)=>!used.includes(id)):token));
     setCount(count+1);
   };
-  return <Modal title={hasGame ? 'Start a new table' : 'Welcome to the table'} close={close}>
-    <div className="mode-tabs"><button aria-pressed={mode==='local'} onClick={()=>setMode('local')}>Shared device</button><button aria-pressed={mode==='ai'} onClick={()=>setMode('ai')}>Computer</button>{online&&<button onClick={online}>Online</button>}</div>
+  return <Modal title={hasGame ? 'Start a new game' : 'Welcome to the table'} close={close}>
+    <div className="mode-tabs">{online&&<button onClick={online}>Online multiplayer</button>}<button aria-pressed={mode==='ai'} onClick={()=>setMode('ai')}>Computer</button><button aria-pressed={mode==='local'} onClick={()=>setMode('local')}>Shared device</button></div>
     <div className="setup-edition"><MapPin size={28} /><div><span className="eyebrow">CHOOSE YOUR CITY</span><select aria-label="Board edition" value={board} onChange={e => setBoard(e.target.value)}>{Object.values(boards).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div><span className="local-pill">LOCAL PLAY</span></div>
     <fieldset className="artifact-finish-picker"><legend>Artifact finish</legend><p>Choose the metal for your playing pieces.</p><div>{(['silver','gold'] as const).map(metal=><button key={metal} type="button" aria-pressed={finish===metal} onClick={()=>changeFinish(metal)}><span className={`finish-swatch ${metal}`} aria-hidden="true"/>{metal==='gold'?'Gold':'Silver'}{finish===metal&&<Check size={15}/>}</button>)}</div></fieldset>
     <div className="setup-row"><h3>Who's playing?</h3><div className="stepper"><button className="icon-button" aria-label="Remove player" disabled={count===2} onClick={()=>setCount(count-1)}><Minus size={16}/></button><span>{count} players</span><button className="icon-button" aria-label="Add player" disabled={count===4} onClick={addPlayer}><Plus size={16}/></button></div></div>

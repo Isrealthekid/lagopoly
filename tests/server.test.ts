@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 const services:ReturnType<typeof createService>[]=[];
 const staticFixtures:string[]=[];
-afterEach(()=>{for(const service of services.splice(0))service.close();for(const folder of staticFixtures.splice(0)){unlinkSync(join(folder,'index.html'));rmdirSync(folder);}});
+afterEach(async()=>{for(const service of services.splice(0))await service.close();for(const folder of staticFixtures.splice(0)){unlinkSync(join(folder,'index.html'));rmdirSync(folder);}});
 async function fixture(){
   const service=createService({database:':memory:',origin:'http://localhost:5173'});services.push(service);
   await new Promise<void>(resolve=>service.server.listen(0,'127.0.0.1',resolve));
@@ -19,15 +19,22 @@ async function fixture(){
   return {service,request,account};
 }
 describe('secure accounts and authoritative rooms',()=>{
+  it('accepts eight-character passwords and rejects shorter passwords', async()=>{
+    const {request}=await fixture();
+    expect((await request('/api/register',{username:'TooShort',password:'Abc123!'})).status).toBe(400);
+    const registered=await request('/api/register',{username:'EightChars',password:'Abc123!?'});
+    expect(registered.status).toBe(200);
+    expect((await request('/api/login',{username:'EightChars',password:'Abc123!?'})).status).toBe(200);
+  });
   it('hands a departing seat to server AI, notifies others and frees their account',async()=>{
     const {service,request,account}=await fixture();const a=await account('Ada'),b=await account('Tunde');
     const created=await request('/api/rooms',{cap:2},a.cookie),code=created.body.room.code;
     await request(`/api/rooms/${code}/join`,{},b.cookie);
     await request(`/api/rooms/${code}/ready`,{ready:true},a.cookie);await request(`/api/rooms/${code}/ready`,{ready:true},b.cookie);
     await request(`/api/rooms/${code}/start`,{},a.cookie);
-    const room=JSON.parse(service.db.prepare('SELECT payload FROM rooms WHERE code=?').get(code)!.payload as string);
+    const room=JSON.parse((await service.db.prepare('SELECT payload FROM rooms WHERE code=?').get(code))!.payload as string);
     room.game.current=0;room.game.phase='roll';
-    service.db.prepare('UPDATE rooms SET payload=? WHERE code=?').run(JSON.stringify(room),code);
+    await service.db.prepare('UPDATE rooms SET payload=? WHERE code=?').run(JSON.stringify(room),code);
     expect((await request(`/api/rooms/${code}/leave`,{},a.cookie)).status).toBe(200);
     const remaining=(await request(`/api/rooms/${code}`,undefined,b.cookie)).body.room;
     expect(remaining.game.aiPlayers).toEqual([0]);expect(remaining.host).toBe(b.body.user.id);
@@ -38,7 +45,7 @@ describe('secure accounts and authoritative rooms',()=>{
     expect((await request(`/api/rooms/${code}`,undefined,b.cookie)).body.room.revision).toBeGreaterThan(remaining.revision);
     expect((await request('/api/rooms',{cap:2},a.cookie)).status).toBe(201);
     await request(`/api/rooms/${code}/leave`,{},b.cookie);
-    expect(service.db.prepare('SELECT code FROM rooms WHERE code=?').get(code)).toBeUndefined();
+    expect(await service.db.prepare('SELECT code FROM rooms WHERE code=?').get(code)).toBeUndefined();
   });
   it('serves the production website and issues secure HTTP-only cookies',async()=>{
     const folder=mkdtempSync(join(tmpdir(),'lag-board-test-'));staticFixtures.push(folder);writeFileSync(join(folder,'index.html'),'<title>MONOPOLY</title>');
@@ -54,7 +61,7 @@ describe('secure accounts and authoritative rooms',()=>{
   it('persists hashed credentials, remembers sessions, rejects CSRF and revokes logout',async()=>{
     const {service,request,account}=await fixture();const user=await account('Ada');
     expect((await request('/api/me',undefined,user.cookie)).body.user.username).toBe('Ada');
-    const stored=service.db.prepare('SELECT * FROM users').get()!;
+    const stored=(await service.db.prepare('SELECT * FROM users').get())!;
     expect(stored.password).not.toBe('CorrectHorseBattery123!');
     expect((await request('/api/login',{username:'Ada',password:'WrongPassword123!'})).status).toBe(401);
     const login=await request('/api/login',{username:'ada',password:'CorrectHorseBattery123!'});expect(login.status).toBe(200);
@@ -84,14 +91,14 @@ describe('secure accounts and authoritative rooms',()=>{
     await request(`/api/rooms/${code}/join`,{},b.cookie);
     await request(`/api/rooms/${code}/ready`,{ready:true},a.cookie);await request(`/api/rooms/${code}/ready`,{ready:true},b.cookie);
     await request(`/api/rooms/${code}/start`,{},a.cookie);
-    const row=service.db.prepare('SELECT payload FROM rooms WHERE code=?').get(code)!;
+    const row=(await service.db.prepare('SELECT payload FROM rooms WHERE code=?').get(code))!;
     const room=JSON.parse(row.payload as string),g=room.game;
     g.current=0;g.phase='debt';g.players[0].cash=0;g.payments=[{from:0,to:1,amount:2000000,reason:'Test insolvency'}];
     g.tradeNotifications=[{from:0,to:1,status:'accepted',read:false}];
-    service.db.prepare('UPDATE rooms SET payload=? WHERE code=?').run(JSON.stringify(room),code);
+    await service.db.prepare('UPDATE rooms SET payload=? WHERE code=?').run(JSON.stringify(room),code);
     const end=await request(`/api/rooms/${code}/action`,{revision:room.revision,action:{type:'bankrupt'}},a.cookie);
     expect(end.status).toBe(200);expect(end.body.room.closed).toBe(true);
-    expect(service.db.prepare('SELECT code FROM rooms WHERE code=?').get(code)).toBeUndefined();
+    expect(await service.db.prepare('SELECT code FROM rooms WHERE code=?').get(code)).toBeUndefined();
     expect((await request(`/api/rooms/${code}`,undefined,b.cookie)).body.room.game.phase).toBe('won');
     const read=await request(`/api/rooms/${code}/action`,{action:{type:'readTradeNotifications',player:0}},a.cookie);
     expect(read.status).toBe(200);expect(read.body.room.game.tradeNotifications[0].readBy).toEqual([0]);
