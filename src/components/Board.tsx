@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, BusFront, Landmark, Gift, CircleHelp, HandCoins, Coffee, LockKeyhole, Siren, House, Building2, CarFront, Sailboat, Bike, Plane, Anchor } from 'lucide-react';
+import { ArrowUpRight, BusFront, Landmark, Gift, CircleHelp, HandCoins, Coffee, LockKeyhole, Siren, House, Building2, CarFront, Ship, GraduationCap, Footprints, Cylinder, ShoppingCart } from 'lucide-react';
 import type { BoardDefinition, GameState, Space } from '../game/types';
 import { compactMoney } from '../game/engine';
-import { DiceTray, Sculpture, piecePoint } from './Tabletop';
-export const tokenIcons = [CarFront, Sailboat, Bike, Plane, Anchor, House];
-export const tokenNames = ['Car', 'Boat', 'Bicycle', 'Plane', 'Anchor', 'House'];
+import { DiceTray, Sculpture, piecePoint, pieceHeading } from './Tabletop';
+export const tokenIcons = [CarFront, Ship, GraduationCap, Footprints, Cylinder, ShoppingCart];
+export const tokenNames = ['Race car', 'Battleship', 'Top hat', 'Boot', 'Thimble', 'Wheelbarrow'];
 export const playerColors = ['#186648', '#e29934', '#8060a4', '#3c83bb'];
 export function Token({ token, color, size = 20 }: { token: number; color: string; size?: number }) { const Icon = tokenIcons[token]; return <Icon size={size} color={color} strokeWidth={2.3} />; }
 export function spaceIcon(s: Space, size = 20) {
@@ -67,10 +67,10 @@ export function Board({ board, game, selected, select, rolling, motion, finish, 
     return ()=>{clearTimeout(startTimer);clearInterval(interval);clearTimeout(finishTimer);};
   },[targets,rolling,reduced,game.boardId,onMoving,onArrived]);
   useEffect(()=>()=>onMoving(false),[onMoving]);
-  const focus=rolling?{x:50,y:62}:piecePoint(positions[current.id]??current.position);
+  const focus=rolling?{x:50,y:50}:piecePoint(positions[current.id]??current.position);
   const radians=angle*Math.PI/180;
   const dx=(focus.x-50)*scene.size/100,dy=(focus.y-50)*scene.size/100;
-  const cameraScale=scene.mobile?.95:.67;
+  const cameraScale=rolling?Math.min(scene.width,scene.height)*.67/scene.size:scene.mobile?.95:.67;
   const strength=scene.mobile?1:.25;
   const cameraX=depth&&follow?-(dx*Math.cos(radians)-dy*Math.sin(radians))*cameraScale*strength:0;
   const cameraY=depth&&follow?-(dx*Math.sin(radians)+dy*Math.cos(radians))*Math.cos(38*Math.PI/180)*cameraScale*strength+(scene.mobile?scene.height*(scene.height<500?0:['buy','card','debt','auction','trade'].includes(game.phase)?0:.14):0):0;
@@ -100,7 +100,8 @@ export function Board({ board, game, selected, select, rolling, motion, finish, 
     </div>
     <div className="piece-layer" aria-label="Player pieces">{game.players.filter(p=>!p.bankrupt).map(p=>{
       const point=piecePoint(positions[p.id]??p.position);
-      return <span key={p.id} data-player={p.id} data-position={positions[p.id]??p.position} className={`tile-token sculpted-token ${movingPieces.includes(p.id)?'piece-moving':''} ${p.id===current.id?'active-token':''}`} style={{left:`${point.x}%`,top:`${point.y}%`,'--seat-offset':`${(p.id-1.5)*7}px`,'--token-color':playerColors[p.id]} as React.CSSProperties} title={`${p.name}: ${board.spaces[positions[p.id]??p.position].name}`}>{lastMoved.includes(p.id)&&!reduced&&<i key={positions[p.id]} className={`piece-step-ring ${movingPieces.includes(p.id)?'travelling':'landed'}`} aria-hidden="true"/>}<span className="piece-cast-shadow" aria-hidden="true"/><span className="piece-motion"><Sculpture token={p.token} color={playerColors[p.id]} finish={finish} /></span><span className="piece-name">{p.name}</span></span>;
+      const heading=pieceHeading(positions[p.id]??p.position);
+      return <span key={p.id} data-player={p.id} data-position={positions[p.id]??p.position} className={`tile-token sculpted-token ${movingPieces.includes(p.id)?'piece-moving':''} ${p.id===current.id?'active-token':''}`} style={{left:`${point.x}%`,top:`${point.y}%`,'--piece-heading':`${heading}deg`,'--seat-offset':`${(p.id-1.5)*7}px`,'--token-color':playerColors[p.id]} as React.CSSProperties} title={`${p.name}: ${board.spaces[positions[p.id]??p.position].name}`}>{lastMoved.includes(p.id)&&!reduced&&<i key={positions[p.id]} className={`piece-step-ring ${movingPieces.includes(p.id)?'travelling':'landed'}`} aria-hidden="true"/>}<span className="piece-cast-shadow" aria-hidden="true"/><span className="piece-motion"><Sculpture token={p.token} color={playerColors[p.id]} finish={finish} /></span><span className="piece-name">{p.name}</span></span>;
     })}</div>
   </div></div></div><div className="board-hint">{depth?'Drag to rotate · tap a space to inspect':'Tap a space to inspect'}<span>{rolling?'Rolling dice…':game.players.some(p=>positions[p.id]!==p.position)?'Moving…':''}</span></div></>;
 }

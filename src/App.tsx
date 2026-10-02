@@ -44,8 +44,17 @@ export default function App() {
   const board = getBoard(game.boardId), current = game.players[game.current];
   const actor = managementPlayer(game), pending = game.pendingCard ? [...board.community,...board.chance].find(c=>c.id===game.pendingCard) : null;
   const stock = inventory(game), space = board.spaces[selected];
-  const destinationReady=arrived===game.players.map(p=>p.position).join(',');
-  const showPrompt=!viewDepth||(!rolling&&!moving&&destinationReady&&(!['roll','manage'].includes(game.phase)||current.holding||game.transferCharges.length>0));
+  const tokenArrived=arrived===game.players.map(p=>p.position).join(',');
+  const purchaseKey=`${game.boardId}:${game.turn}:${game.current}:${current.position}`;
+  const [purchaseReady,setPurchaseReady]=useState<string|null>(null);
+  useEffect(()=>{
+    setPurchaseReady(null);
+    if(game.phase!=='buy'||rolling||moving||!tokenArrived)return;
+    const timeout=setTimeout(()=>setPurchaseReady(purchaseKey),1000);
+    return ()=>clearTimeout(timeout);
+  },[game.phase,rolling,moving,tokenArrived,purchaseKey,session]);
+  const destinationReady=tokenArrived&&(game.phase!=='buy'||purchaseReady===purchaseKey);
+  const showPrompt=(!viewDepth&&game.phase!=='buy')||(!rolling&&!moving&&destinationReady&&(!['roll','manage'].includes(game.phase)||current.holding||game.transferCharges.length>0));
   useEffect(()=> {
     session.start();
     const unsub=session.subscribe(g=>setGame(g));
@@ -64,7 +73,7 @@ export default function App() {
     if(action.type!=='readTradeNotifications'&&((onlineRoom&&decision!==onlineRoom.seat)||(!onlineRoom&&game.aiPlayers?.includes(decision)))){setError('Wait for the other player to finish their decision.');return false;}
     try { session.dispatch(action);setError(null); return true; } catch(e) { setError(e instanceof Error?e.message:'This action is unavailable.');return false; }
   };
-  const roll=()=> { if(send({type:'roll'})&&motion&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){setRolling(true);if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>setRolling(false),1200);} };
+  const roll=()=> { if(send({type:'roll'})&&motion&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){setRolling(true);if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>setRolling(false),3200);} };
   const lastAnimatedRoll=useRef(game.logs.find(log=>/ rolls [1-6] \+ [1-6]\./.test(log.text))?.id);
   useEffect(()=>{
     const latest=game.logs.find(log=>/ rolls [1-6] \+ [1-6]\./.test(log.text))?.id;
@@ -72,7 +81,7 @@ export default function App() {
     lastAnimatedRoll.current=latest;
     if(!latest||!motion||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
     if(timer.current)clearTimeout(timer.current);
-    setRolling(true);timer.current=setTimeout(()=>setRolling(false),1200);
+    setRolling(true);timer.current=setTimeout(()=>setRolling(false),3200);
   },[game.logs,motion]);
   const start=(boardId:string,names:string[],tokens:number[],aiPlayers:number[]=[])=> {
     if(timer.current)clearTimeout(timer.current);setRolling(false);

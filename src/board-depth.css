@@ -89,7 +89,7 @@
 /* Six-sided dice roll in 3D and settle in different places each throw. */
 .board-section .game-board .cube-tray{left:38%;bottom:19%;width:26%;height:18%;transform:none;display:block;perspective:500px;overflow:visible;padding:0;transform-style:preserve-3d;--die-size:clamp(14px,calc(var(--board-unit, 6px) * 5),42px)}
 .dice-landing{position:absolute;left:50%;top:50%;width:var(--die-size);height:var(--die-size);transform:translate(calc(-50% + var(--land-x)),calc(-50% + var(--land-y))) rotateZ(var(--land-r));transition:transform 1.2s cubic-bezier(.18,.72,.26,1);transform-style:preserve-3d}
-.board-section .game-board .die.cube,.board-section .game-board .die.cube:nth-child(2){display:block;position:relative;width:var(--die-size);height:var(--die-size);padding:0;gap:0;border:0;background:none;box-shadow:none;border-radius:0;transform:rotateX(20deg) rotateY(-16deg);transform-style:preserve-3d;animation:none;transition:transform .35s ease-out}
+.board-section .game-board .die.cube,.board-section .game-board .die.cube:nth-child(2){display:block;position:relative;width:var(--die-size);height:var(--die-size);padding:0;gap:0;border:0;background:none;box-shadow:none;border-radius:0;transform:translateZ(calc(var(--die-size)/2));transform-style:preserve-3d;animation:none;transition:transform .35s ease-out}
 .die-face{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:10%;padding:17%;border:1px solid #f97376;border-radius:12%;background:#df1e27 linear-gradient(135deg,#f45457,#db222b 65%,#b71320);backface-visibility:hidden;box-shadow:inset 1px 1px 3px #fff4}
 .die-face .pip{background:#fff9ee;border-radius:50%;box-shadow:inset 0 1px 2px #54302055}
 .face-front{transform:translateZ(calc(var(--die-size)/2))}
@@ -380,3 +380,18 @@
  .app-shell:has(.depth-view) .exit-game-button.secondary{top:12px;right:64px}
 }
 
+.board-section .game-board .cube-tray{inset:0;width:100%;height:100%;pointer-events:none;perspective:none;z-index:5}
+.board-section .cube-tray .dice-landing{transform:translate(-50%,-50%) rotateZ(var(--land-r));transition:left 1.2s cubic-bezier(.15,.65,.3,1),top 1.2s cubic-bezier(.15,.65,.3,1),transform 1.2s ease-out}
+.board-section .cube-tray .die-face{background:radial-gradient(ellipse at 22% 15%,#fff8 0%,#fff0 42%),linear-gradient(145deg,#ff3d41,#d30c1a 65%,#950918);border-color:#ff666c;box-shadow:inset 2px 2px 4px #fff5,inset -2px -2px 4px #65081280}
+.board-section .cube-tray .die-face .pip{background:radial-gradient(circle at 40% 35%,#fff,#eee9dd 75%);box-shadow:inset 0 1px 2px #65211d80,0 1px 0 #ff8b8b}
+@keyframes cube-tumble{0%{transform:translateZ(calc(var(--die-size)/2 + 24px)) rotateX(-360deg) rotateY(-360deg)}22%{transform:translateZ(calc(var(--die-size)/2 + 100px)) rotateX(-240deg) rotateY(-270deg)}48%{transform:translateZ(calc(var(--die-size)/2 + 10px)) rotateX(-90deg) rotateY(-180deg)}65%{transform:translateZ(calc(var(--die-size)/2 + 36px)) rotateX(-50deg) rotateY(-80deg)}80%{transform:translateZ(calc(var(--die-size)/2 + 4px)) rotateX(8deg) rotateY(-6deg)}90%{transform:translateZ(calc(var(--die-size)/2 + 8px)) rotateX(-4deg) rotateY(3deg)}100%{transform:translateZ(calc(var(--die-size)/2))}}
+@keyframes cube-tumble-two{0%{transform:translateZ(calc(var(--die-size)/2 + 30px)) rotateX(360deg) rotateY(360deg)}26%{transform:translateZ(calc(var(--die-size)/2 + 120px)) rotateX(240deg) rotateY(230deg)}52%{transform:translateZ(calc(var(--die-size)/2 + 10px)) rotateX(90deg) rotateY(180deg)}70%{transform:translateZ(calc(var(--die-size)/2 + 28px)) rotateX(40deg) rotateY(50deg)}84%{transform:translateZ(calc(var(--die-size)/2 + 4px)) rotateX(-6deg) rotateY(5deg)}93%{transform:translateZ(calc(var(--die-size)/2 + 5px)) rotateX(3deg) rotateY(-2deg)}100%{transform:translateZ(calc(var(--die-size)/2))}}
+.board-scroll.depth-view:has(.tumbling) .board-stage{--scene-scale: .38!important;--camera-x:0px!important;--camera-y:0px!important}
+@media(min-width:740px){.board-scroll.depth-view:has(.tumbling) .board-stage{--scene-scale:.55!important}}
+.sculpted-token .sculpture{rotate:z var(--piece-heading,0deg);transition:rotate .2s ease-out}
+.model-2 .round .solid-face,.model-4 .round .solid-face{border-radius:48%}
+.model-4 .solid-face{background-image:radial-gradient(circle,#4e5b6355 1px,transparent 1.5px),linear-gradient(120deg,var(--metal-dark),var(--metal-light),var(--metal-mid));background-size:4px 4px,100% 100%}
+.reduced-motion .sculpture{transition:none}
+.board-section .cube-tray .dice-landing:before{content:"";position:absolute;inset:-8%;border-radius:20%;background:#17282038;box-shadow:2px 3px 3px #14271b48;transform:translate3d(2px,3px,1px);opacity:.8;pointer-events:none}
+.board-section .cube-tray.tumbling .dice-landing:before{animation:dice-shadow-flight 1.2s ease-out both}
+@keyframes dice-shadow-flight{0%{opacity:.3;filter:blur(5px);transform:translate3d(3px,5px,1px) scale(1.2)}26%{opacity:.18;filter:blur(9px);transform:translate3d(5px,8px,1px) scale(1.5)}52%{opacity:.65;filter:blur(2px);transform:translate3d(2px,3px,1px) scale(1.05)}70%{opacity:.4;filter:blur(4px);transform:translate3d(3px,5px,1px) scale(1.2)}100%{opacity:.8;filter:blur(0);transform:translate3d(2px,3px,1px) scale(1)}}
