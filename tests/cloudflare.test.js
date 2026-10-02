@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import worker from '../worker/index.js';
 import { onRequest } from '../functions/api/[[path]].js';
 afterEach(()=>vi.unstubAllGlobals());
 describe('Cloudflare API routing',()=>{
@@ -25,4 +26,13 @@ describe('Cloudflare API routing',()=>{
     const response=await onRequest({request:new Request('https://game.example/api/health'),env:{BACKEND_ORIGIN:'https://backend.example'}});
     expect(response.status).toBe(502);
   });
+});
+
+it('routes API requests before assets and serves the frontend through the asset binding',async()=>{
+  const assets=vi.fn(async()=>new Response('game frontend'));
+  const env={ASSETS:{fetch:assets}};
+  const api=await worker.fetch(new Request('https://game.example/api/health'),env);
+  expect(api.status).toBe(503);expect(assets).not.toHaveBeenCalled();
+  const page=await worker.fetch(new Request('https://game.example/'),env);
+  expect(await page.text()).toBe('game frontend');expect(assets).toHaveBeenCalledOnce();
 });

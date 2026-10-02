@@ -5,7 +5,7 @@ Dashboard: https://supabase.com/dashboard/project/tasgfyupdivohkjhkvpk
 
 ## Architecture
 
-Cloudflare Pages serves the frontend. Pages Functions forwards `/api/*` to the Node backend. The backend uses Supabase PostgreSQL for accounts, hashed sessions, online rooms and temporary finished-game results. No persistent backend disk is required. Existing username/password login and salted scrypt hashing remain in place; this change uses Supabase Database, not Supabase Auth. Email/password recovery is not added by this migration.
+Cloudflare Workers serves the frontend. Its Worker handler forwards `/api/*` to the Node backend. The backend uses Supabase PostgreSQL for accounts, hashed sessions, online rooms and temporary finished-game results. No persistent backend disk is required. Existing username/password login and salted scrypt hashing remain in place; this change uses Supabase Database, not Supabase Auth. Email/password recovery is not added by this migration.
 
 The `monopoly` schema is private, not exposed through the Data API. Tables have RLS enabled with no browser policies, intentionally denying browser access. Only the trusted backend connects to PostgreSQL. Never put the database URL or password in a VITE_ variable.
 
@@ -23,16 +23,20 @@ The `monopoly` schema is private, not exposed through the Data API. Tables have 
 
 TLS certificate verification is enabled. If the pooler's certificate needs Supabase's CA, download the certificate from Database Settings and set `SUPABASE_DB_CA_FILE` to its server-side file path. Do not disable verification.
 
-## Cloudflare Pages
+## Cloudflare Workers (your current deployment)
 
-Set build command `npm run build`, output directory `dist`, root directory the repository root. Add production environment variables/secrets:
+Your Cloudflare project was initially static-assets-only. The included `worker/index.js` and `wrangler.jsonc` add executable API routing while serving `dist` as frontend assets. `/api` and `/api/*` run through the Worker first, preventing SPA fallback from returning the game for API requests.
 
-- `BACKEND_ORIGIN=https://YOUR-NODE-BACKEND-HOST` (no /api suffix).
-- `API_PROXY_SECRET`: the same random secret as the backend.
+1. Set `name` in wrangler.jsonc to the exact existing Worker name shown in Cloudflare (not the custom domain). This avoids creating a separate Worker.
+2. Commit and push the code.
+3. Under Worker Settings > Build, set build command `npm run build`, deploy command `npx wrangler deploy`, repository root the project root. Replace any static-only deploy command such as `npx wrangler deploy --assets ./dist` with `npx wrangler deploy`.
+4. Redeploy once. Runtime variables become available after the Worker script is deployed.
+5. In Settings > Variables and Secrets add `BACKEND_ORIGIN` as Text (your HTTPS Node backend origin without /api), and `API_PROXY_SECRET` as Secret (the same value configured on the Node backend). Save and deploy the settings.
+6. Check the existing custom domain remains attached to this Worker, then verify `/api/health`, signup and two-player play.
 
-The included `functions/api/[[path]].js` forwards requests, Origin, cookies and responses. It adds an authenticated client IP header for per-player rate limits. Commit and push the code to redeploy; test `https://monopoly.olufowosere.com/api/health`, signup, login, logout, room joining and reconnect using two browser profiles.
+`keep_vars` preserves dashboard text variables on subsequent Wrangler deployments. Database credentials remain on the Node backend, not in this proxy Worker.
 
-This Functions layout is for Cloudflare Pages. A Workers deployment needs a Worker route instead.
+Cloudflare Pages remains supported through `functions/api/[[path]].js`, but you do not need to create or switch to Pages. For Pages, use build `npm run build`, output `dist`, and the same BACKEND_ORIGIN and API_PROXY_SECRET environment settings.
 
 ## Existing account import
 
