@@ -4,7 +4,7 @@ import { boards } from '../data/boards';
 import { playerColors, Token, tokenNames } from './Board';
 import { Modal } from './Modal';
 
-export function Setup({ start, close, hasGame, username, online, finish, changeFinish }: { start: (board: string, names: string[], tokens: number[], aiPlayers?:number[]) => void; close?: () => void; hasGame: boolean; username?:string; online?:()=>void; finish:'silver'|'gold'; changeFinish:(finish:'silver'|'gold')=>void }) {
+export function Setup({ start, close, hasGame, username, online, finish, changeFinish, rejoin }: { start: (board: string, names: string[], tokens: number[], aiPlayers?:number[]) => void; close?: () => void; hasGame: boolean; username?:string; online?:()=>void; finish:'silver'|'gold'; changeFinish:(finish:'silver'|'gold')=>void; rejoin?:{seconds:number;join:()=>void} }) {
   const [count, setCount] = useState(2), [board, setBoard] = useState('lagos');
   const [names, setNames] = useState([username??'Player 1', 'Player 2', 'Player 3', 'Player 4']);
   const [mode,setMode]=useState<'local'|'ai'>('local');
@@ -18,6 +18,7 @@ export function Setup({ start, close, hasGame, username, online, finish, changeF
     setCount(count+1);
   };
   return <Modal title={hasGame ? 'Start a new game' : 'Welcome to the table'} close={close}>
+    {rejoin&&<button className="primary full" onClick={rejoin.join}><Play size={18}/>Rejoin room ({rejoin.seconds}s)</button>}
     <div className="mode-tabs">{online&&<button onClick={online}>Online multiplayer</button>}<button aria-pressed={mode==='ai'} onClick={()=>setMode('ai')}>Computer</button><button aria-pressed={mode==='local'} onClick={()=>setMode('local')}>Shared device</button></div>
     <div className="setup-edition"><MapPin size={28} /><div><span className="eyebrow">CHOOSE YOUR CITY</span><select aria-label="Board edition" value={board} onChange={e => setBoard(e.target.value)}>{Object.values(boards).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div><span className="local-pill">LOCAL PLAY</span></div>
     <fieldset className="artifact-finish-picker"><legend>Artifact finish</legend><p>Choose the metal for your playing pieces.</p><div>{(['silver','gold'] as const).map(metal=><button key={metal} type="button" aria-pressed={finish===metal} onClick={()=>changeFinish(metal)}><span className={`finish-swatch ${metal}`} aria-hidden="true"/>{metal==='gold'?'Gold':'Silver'}{finish===metal&&<Check size={15}/>}</button>)}</div></fieldset>

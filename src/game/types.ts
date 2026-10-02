@@ -13,6 +13,7 @@ export interface GameState {
   moneyEvents?: MoneyEvent[];
   version: 1; layoutVersion?: number; boardId: string; players: Player[]; assets: Record<number, Asset>; current: number;
   aiPlayers?: number[];
+  onlineDepartures?: {player:number;returnBy:number}[];
   tradeNotifications?: { from: number; to: number; status: 'proposed' | 'accepted' | 'declined'; read: boolean; readBy?: number[] }[];
   phase: 'roll' | 'buy' | 'card' | 'manage' | 'debt' | 'auction' | 'trade' | 'won';
   dice: [number, number]; doubles: number; extraRoll: boolean; turn: number;

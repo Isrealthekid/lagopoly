@@ -395,3 +395,7 @@
 .board-section .cube-tray .dice-landing:before{content:"";position:absolute;inset:-8%;border-radius:20%;background:#17282038;box-shadow:2px 3px 3px #14271b48;transform:translate3d(2px,3px,1px);opacity:.8;pointer-events:none}
 .board-section .cube-tray.tumbling .dice-landing:before{animation:dice-shadow-flight 1.2s ease-out both}
 @keyframes dice-shadow-flight{0%{opacity:.3;filter:blur(5px);transform:translate3d(3px,5px,1px) scale(1.2)}26%{opacity:.18;filter:blur(9px);transform:translate3d(5px,8px,1px) scale(1.5)}52%{opacity:.65;filter:blur(2px);transform:translate3d(2px,3px,1px) scale(1.05)}70%{opacity:.4;filter:blur(4px);transform:translate3d(3px,5px,1px) scale(1.2)}100%{opacity:.8;filter:blur(0);transform:translate3d(2px,3px,1px) scale(1)}}
+.online-room-notices:empty{display:none}
+.online-room-notices{display:flex;flex-direction:column;gap:6px}
+.app-shell:has(.depth-view) .online-room-notices{position:fixed;top:110px;left:12px;right:12px;z-index:35;pointer-events:none}
+.app-shell:has(.depth-view) .online-room-notices .online-departure-notice{position:static;border-radius:6px;margin:0}

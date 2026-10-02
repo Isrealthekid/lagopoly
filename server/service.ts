@@ -9,7 +9,7 @@ import { chooseAIAction, decisionPlayer } from '../src/game/ai';
 import type { Action, GameState } from '../src/game/types';
 
 type User = { id: string; username: string };
-type Member = User & { ready: boolean; left?: boolean };
+type Member = User & { ready: boolean; left?: boolean; returnBy?: number };
 type Room = { code: string; host: string; public: boolean; cap: number; members: Member[]; game: GameState | null; revision: number; updated: number };
 export class HttpError extends Error { constructor(public status: number, message: string) { super(message); } }
 function assert(condition: unknown, status: number, message: string): asserts condition { if(!condition)throw new HttpError(status,message); }
@@ -49,7 +49,7 @@ export function createService(options: { database?: string; origin?: string; pro
   };
   const view=(room:Room,user:User,closed=false)=>{
     const game=room.game?structuredClone(room.game):null;
-    if(game){game.community=game.community.map((_,i)=>`CC-hidden-${i}`);game.chance=game.chance.map((_,i)=>`CH-hidden-${i}`);}
+    if(game){game.community=game.community.map((_,i)=>`CC-hidden-${i}`);game.chance=game.chance.map((_,i)=>`CH-hidden-${i}`);game.onlineDepartures=room.members.flatMap((m,player)=>m.left&&m.returnBy?[{player,returnBy:m.returnBy}]:[]);}
     return {...room,game,seat:room.members.findIndex(m=>m.id===user.id),closed};
   };
   const userFor=async(req:IncomingMessage)=>{
@@ -73,6 +73,12 @@ export function createService(options: { database?: string; origin?: string; pro
   const join=async(room:Room,user:User)=>{
     room=(await roomByCode(room.code))!;assert(room,404,'This room has closed.');
     if(room.members.some(m=>m.id===user.id&&!m.left))return view(room,user);
+    const returning=room.members.findIndex(m=>m.id===user.id&&m.left&&!!m.returnBy&&m.returnBy>Date.now());
+    if(returning>=0&&room.game){
+      assert(!(await allRooms()).some(r=>r.code!==room.code&&r.members.some(m=>m.id===user.id&&!m.left)),409,'Leave your other room first.');
+      room.members[returning].left=false;delete room.members[returning].returnBy;
+      addLog(room.game,`${user.username} rejoined the game.`,returning);room.revision++;await store(room);return view(room,user);
+    }
     assert(!room.game,409,'This game has already started.');
     assert(room.members.length<room.cap,409,'This room is full.');
     assert(!(await allRooms()).some(r=>r.members.some(m=>m.id===user.id&&!m.left)),409,'Leave your current room before joining another.');
@@ -173,11 +179,10 @@ export function createService(options: { database?: string; origin?: string; pro
         else if(command==='leave') {
           if(room.game){
             room.members[seat].left=true;
-            room.game.aiPlayers=[...new Set([...(room.game.aiPlayers??[]),seat])];
-            addLog(room.game,`${user.username} left the game. AI now controls their seat.`,seat);
-            if(room.members.every(m=>m.left)){await remove(code);return json(res,200,{room:null});}
-            if(room.host===user.id)room.host=room.members.find(m=>!m.left)!.id;
-            room.revision++;await store(room);return json(res,200,{room:null});
+            room.members[seat].returnBy=Date.now()+10000;
+            addLog(room.game,`${user.username} left the game. They have 10 seconds to rejoin before the computer takes over.`,seat);
+            if(room.host===user.id&&room.members.some(m=>!m.left))room.host=room.members.find(m=>!m.left)!.id;
+            room.revision++;await store(room);return json(res,200,{room:null,returnBy:room.members[seat].returnBy});
           }
           room.members.splice(seat,1);
           if(!room.members.length){await remove(code);return json(res,200,{room:null});}
@@ -220,6 +225,12 @@ export function createService(options: { database?: string; origin?: string; pro
   });
   const aiTimer=setInterval(()=>{ void db.transaction(async()=>{
     for(const room of await allRooms()){
+      let expired=false;
+      for(const [seat,member] of room.members.entries())if(room.game&&member.left&&member.returnBy&&member.returnBy<=Date.now()){
+        delete member.returnBy;room.game.aiPlayers=[...new Set([...(room.game.aiPlayers??[]),seat])];
+        addLog(room.game,`${member.username} did not rejoin. The computer has taken over their seat.`,seat);expired=true;
+      }
+      if(expired){room.revision++;if(room.members.every(m=>m.left&&!m.returnBy)){await remove(room.code);continue;}await store(room);}
       if(!room.game||room.game.phase==='won'||!room.game.aiPlayers?.includes(decisionPlayer(room.game)))continue;
       try{
         room.game=transition(room.game,chooseAIAction(room.game),dice);room.revision++;

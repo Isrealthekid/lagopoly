@@ -39,6 +39,9 @@ export default function App() {
   const [tradeInbox,setTradeInbox] = useState(false);
   const [account,setAccount]=useState<Account|null>(null),[hub,setHub]=useState(false);
   const [onlineRoom,setOnlineRoom]=useState<{code:string;seat:number}|null>(null);
+  const [returnRoom,setReturnRoom]=useState<{code:string;returnBy:number}|null>(null);
+  const [clock,setClock]=useState(Date.now());
+  useEffect(()=>{if(!returnRoom&&!game.onlineDepartures?.length)return;const interval=setInterval(()=>setClock(Date.now()),250);return ()=>clearInterval(interval);},[returnRoom,game.onlineDepartures?.length]);
   const [confirmBankruptcy,setConfirmBankruptcy] = useState(false), [motion,setMotion] = useState(()=>{try{return localStorage.getItem('naija-estates.motion')!=='off';}catch{return true;}});
   const timer = useRef<ReturnType<typeof setTimeout>|null>(null), importInput = useRef<HTMLInputElement>(null);
   const board = getBoard(game.boardId), current = game.players[game.current];
@@ -88,6 +91,7 @@ export default function App() {
     const next=createSession(boardId,names,tokens,undefined,aiPlayers);setOnlineRoom(null);setSession(next);setGame(next.get());setStarted(true);setSetup(false);setDetail(null);setPortfolioPlayer(null);setError(null);
   };
   const startOnline=useCallback((room:OnlineRoom)=>{
+    setReturnRoom(null);
     if(!room.game)return;
     if(timer.current)clearTimeout(timer.current);setRolling(false);
     const next=createOnlineSession(room,setError);setOnlineRoom({code:room.code,seat:room.seat});setSession(next);setGame(room.game);setStarted(true);setSetup(false);setHub(false);setDetail(null);setError(null);
@@ -138,7 +142,7 @@ export default function App() {
   const openAssets=()=>{setTab('portfolio');setPortfolioPlayer(onlineRoom?.seat??actor);if(window.matchMedia('(max-width: 1000px)').matches)setMobileAssets(true);};
   const exitGame=async()=>{
     if(onlineRoom){
-      try{await api(`/rooms/${onlineRoom.code}/leave`,{});}catch(e){setError(e instanceof Error?e.message:'Could not leave the room.');return;}
+      try{const result=await api<{returnBy?:number}>(`/rooms/${onlineRoom.code}/leave`,{});if(result.returnBy){setClock(Date.now());setReturnRoom({code:onlineRoom.code,returnBy:result.returnBy});}}catch(e){setError(e instanceof Error?e.message:'Could not leave the room.');return;}
       session.stop();
       const saved=readSave().save;
       const next=saved?createSession(saved.state.G.boardId,saved.state.G.players.map(p=>p.name),saved.state.G.players.map(p=>p.token),saved):createSession('lagos',['Player 1','Player 2'],[0,1]);
@@ -152,7 +156,10 @@ export default function App() {
     <header className="app-header"><a className="wordmark" href="#" aria-label="MONOPOLY LAG-EDITION"><strong>MONOPOLY</strong><span className="wordmark-edition">LAG-EDITION</span></a><div className="header-center">{board.name} <span className="header-divider"/>{onlineRoom?`Room ${onlineRoom.code}`:game.aiPlayers?.length?'Computer opponents':'Pass & play'}</div><nav><button className="header-link account-button" title={account?.username??'Sign in'} onClick={()=>{setSetup(false);setHub(true);}}><ShieldCheck size={17}/><span>{account?.username??'Sign in'}</span></button><button className="header-link" onClick={()=>setRules(true)}><CircleHelp size={17}/><span>Rules</span></button><button className="icon-button" title="Table settings" aria-label="Table settings" onClick={()=>setSettings(true)}><Settings2 size={19}/></button><button className="new-game-button" onClick={()=>setSetup(true)}><CirclePlus size={17}/><span>New game</span></button></nav></header>
     {started&&!setup&&<button className="exit-game-button secondary" onClick={exitGame} title="Return to game selection"><LogOut size={18}/> Exit game</button>}
     <main>
-      {onlineRoom&&!!game.aiPlayers?.length&&<p className="online-departure-notice" role="status">{game.aiPlayers.map(id=>game.players[id].name).join(', ')} left the game. Their {game.aiPlayers.length===1?'seat is':'seats are'} now controlled by AI.</p>}
+      <div className="online-room-notices">
+      {onlineRoom&&game.onlineDepartures?.map(d=><p className="online-departure-notice" role="status" key={d.player}>{game.players[d.player].name} left the game. {Math.max(0,Math.ceil((d.returnBy-clock)/1000))} seconds to rejoin before the computer takes over.</p>)}
+      {onlineRoom&&!!game.aiPlayers?.length&&<p className="online-departure-notice" role="status">{game.aiPlayers.map(id=>game.players[id].name).join(', ')} did not rejoin. Their {game.aiPlayers.length===1?'seat is':'seats are'} now controlled by the computer.</p>}
+      </div>
       <div className="table-heading"><div><div className="eyebrow"><MapPin size={13}/> NIGERIA / {board.city.toUpperCase()}</div><h2>A city of possibilities.</h2></div><div className="table-status"><span className="turn-badge">TURN {game.turn.toString().padStart(2,'0')}</span><span className={`save-status ${saveError?'failed':''}`} title={saveError||'Saved in this browser'}>{saved?<CheckCircle2 size={14}/>:<Save size={14}/>}<span>{saveError?'Save unavailable':started?'Table saved':'New table'}</span></span></div></div>
       {error&&<div className="error-banner" role="alert"><span>{error}</span><button className="icon-button" aria-label="Dismiss message" onClick={()=>setError(null)}><X size={16}/></button></div>}
       {saveError&&<div className="error-banner" role="alert">{saveError}<button onClick={exportSave}><Download size={15}/> Download save</button></div>}
@@ -191,7 +198,7 @@ export default function App() {
       </nav>
     </main>
     <MoneyToasts game={game} busy={rolling||moving||!destinationReady} />
-    {setup&&<Setup finish={artifactFinish} changeFinish={changeArtifactFinish} start={start} username={account?.username} online={()=>{setSetup(false);setHub(true);}} close={started?()=>setSetup(false):undefined} hasGame={started}/ >}
+    {setup&&<Setup rejoin={returnRoom&&returnRoom.returnBy>clock?{seconds:Math.ceil((returnRoom.returnBy-clock)/1000),join:()=>{void api<{room:OnlineRoom}>(`/rooms/${returnRoom.code}/join`,{}).then(r=>startOnline(r.room)).catch(e=>setError(e.message));}}:undefined} finish={artifactFinish} changeFinish={changeArtifactFinish} start={start} username={account?.username} online={()=>{setSetup(false);setHub(true);}} close={started?()=>setSetup(false):undefined} hasGame={started}/ >}
     {hub&&<Multiplayer account={account} currentRoom={onlineRoom?.code} onAccount={updateAccount} onGame={startOnline} close={()=>{setHub(false);if(!started)setSetup(true);}}/>}
     {trade&&<Trade game={game} board={board} from={actor} close={()=>setTrade(false)} propose={proposal=>{if(send({type:'trade',proposal}))setTrade(false);}}/>}
     {tradeInbox&&<Modal title="Trade notifications" close={()=>setTradeInbox(false)}><div className="trade-notifications">{tradeNotices.slice().reverse().map((n,i)=><div className="trade-notification" key={i}><span className={`trade-status-dot ${n.status}`}/><div><strong>{game.players[n.from].name} & {game.players[n.to].name}</strong><p>{n.status==='proposed'?'Trade proposed':n.status==='accepted'?'Trade accepted':'Trade declined'}</p></div></div>)}</div>{game.trade&&<><TradeSummary game={game} board={board}/><div className="action-pair"><button className="primary" onClick={()=>{if(send({type:'acceptTrade'}))setTradeInbox(false);}}>Accept trade</button><button className="secondary" onClick={()=>{if(send({type:'rejectTrade'}))setTradeInbox(false);}}>Decline trade</button></div></>}{canTrade&&<button className="primary full" onClick={()=>{setTradeInbox(false);setTrade(true);}}><ArrowLeftRight size={18}/>New trade</button>}</Modal>}
