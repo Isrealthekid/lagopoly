@@ -21,7 +21,7 @@ export function Board({ board, game, selected, select, rolling, motion, finish, 
   const current = game.players[game.current];
   const [depth,setDepth] = useState(true), [angle,setAngle] = useState(45);
   const [follow,setFollow] = useState(true);
-  const [scene,setScene] = useState({size:760,width:390,height:844,mobile:window.innerWidth<=1100});
+  const [scene,setScene] = useState({size:760,width:390,height:844,mobile:true});
   const [positions,setPositions] = useState(()=>game.players.map(p=>p.position));
   const [movingPieces,setMovingPieces]=useState<number[]>([]);
   const [lastMoved,setLastMoved]=useState<number[]>([]);
@@ -30,7 +30,7 @@ export function Board({ board, game, selected, select, rolling, motion, finish, 
   const stageRef=useRef<HTMLDivElement>(null);
   useEffect(()=>{
     const stage=stageRef.current;if(!stage)return;
-    const observer=new ResizeObserver(()=>{const size=stage.clientWidth;const host=stage.parentElement!;setScene({size,width:host.clientWidth,height:host.clientHeight,mobile:window.innerWidth<=1100});stage.style.setProperty('--board-unit',`${size/100}px`);stage.style.setProperty('--piece-scale',`${Math.max(.45,size/420)}`);});
+    const observer=new ResizeObserver(()=>{const size=stage.clientWidth;const host=stage.parentElement!;setScene({size,width:host.clientWidth,height:host.clientHeight,mobile:true});stage.style.setProperty('--board-unit',`${size/100}px`);stage.style.setProperty('--piece-scale',`${Math.max(.45,size/420)}`);});
     observer.observe(stage);observer.observe(stage.parentElement!);return ()=>observer.disconnect();
   },[]);
   const drag=useRef<{x:number;angle:number}|null>(null);
@@ -100,7 +100,7 @@ export function Board({ board, game, selected, select, rolling, motion, finish, 
     </div>
     <div className="piece-layer" aria-label="Player pieces">{game.players.filter(p=>!p.bankrupt).map(p=>{
       const point=piecePoint(positions[p.id]??p.position);
-      return <span key={p.id} data-player={p.id} data-position={positions[p.id]??p.position} className={`tile-token sculpted-token ${movingPieces.includes(p.id)?'piece-moving':''} ${p.id===current.id?'active-token':''}`} style={{left:`${point.x}%`,top:`${point.y}%`,'--seat-offset':`${(p.id-1.5)*7}px`,'--token-color':playerColors[p.id]} as React.CSSProperties} title={`${p.name}: ${board.spaces[positions[p.id]??p.position].name}`}>{lastMoved.includes(p.id)&&!reduced&&<i key={positions[p.id]} className={`piece-step-ring ${movingPieces.includes(p.id)?'travelling':'landed'}`} aria-hidden="true"/>}<span className="piece-motion"><Sculpture token={p.token} color={playerColors[p.id]} finish={finish} /></span><span className="piece-name">{p.name}</span></span>;
+      return <span key={p.id} data-player={p.id} data-position={positions[p.id]??p.position} className={`tile-token sculpted-token ${movingPieces.includes(p.id)?'piece-moving':''} ${p.id===current.id?'active-token':''}`} style={{left:`${point.x}%`,top:`${point.y}%`,'--seat-offset':`${(p.id-1.5)*7}px`,'--token-color':playerColors[p.id]} as React.CSSProperties} title={`${p.name}: ${board.spaces[positions[p.id]??p.position].name}`}>{lastMoved.includes(p.id)&&!reduced&&<i key={positions[p.id]} className={`piece-step-ring ${movingPieces.includes(p.id)?'travelling':'landed'}`} aria-hidden="true"/>}<span className="piece-cast-shadow" aria-hidden="true"/><span className="piece-motion"><Sculpture token={p.token} color={playerColors[p.id]} finish={finish} /></span><span className="piece-name">{p.name}</span></span>;
     })}</div>
   </div></div></div><div className="board-hint">{depth?'Drag to rotate · tap a space to inspect':'Tap a space to inspect'}<span>{rolling?'Rolling dice…':game.players.some(p=>positions[p.id]!==p.position)?'Moving…':''}</span></div></>;
 }

@@ -77,6 +77,10 @@ export function validateSave(value: unknown): Saved {
     check(Array.isArray(p.cards) && p.cards.every(id => releaseIds.includes(id)));
     check(!p.holding || p.position === 10);
   }
+  if(g.moneyEvents!==undefined){
+    check(Array.isArray(g.moneyEvents)&&g.moneyEvents.length<=32);
+    check(g.moneyEvents.every((e,i)=>integer(e.id,1)&&integer(e.player)&&e.player<g.players.length&&Number.isSafeInteger(e.amount)&&e.amount!==0&&typeof e.reason==='string'&&e.reason.length<=200&&(i===0||e.id>g.moneyEvents![i-1].id)));
+  }
   check(new Set(g.players.map(p => p.token)).size === g.players.length);
   const ownable = board.spaces.filter(s => s.price);
   check(g.assets && Object.keys(g.assets).length === ownable.length);

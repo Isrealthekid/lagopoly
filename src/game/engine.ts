@@ -9,6 +9,12 @@ export function addLog(g: GameState, text: string, player: number | null = g.cur
   g.logs.unshift({ id: ++g.sequence, text, player });
   g.logs = g.logs.slice(0, 70);
 }
+function changeCash(g:GameState, player:number, amount:number, reason:string) {
+  if(!amount)return;
+  g.players[player].cash+=amount;
+  const events=g.moneyEvents??[];
+  g.moneyEvents=[...events.slice(-31),{id:(events.at(-1)?.id??0)+1,player,amount,reason}];
+}
 export function createGame(board: BoardDefinition, names: string[], tokens: number[], shuffle: <T>(items: T[]) => T[], dice: () => number): GameState {
   if (names.length < 2 || names.length > 4) throw new Error('Choose 2 to 4 players.');
   const players = names.map((name, id) => ({ id, name: name.trim().slice(0, 20) || `Player ${id + 1}`, token: tokens[id], cash: board.startingCash, position: 0, holding: false, attempts: 0, bankrupt: false, cards: [] as string[] }));
@@ -65,7 +71,7 @@ function sendHolding(g: GameState) {
 }
 function moveTo(g: GameState, to: number, forward: boolean) {
   const p = g.players[g.current], board = getBoard(g.boardId);
-  if (forward && to <= p.position) { p.cash += board.salary; addLog(g, `${p.name} collects ${money(board.salary)} at ${board.spaces[0].name}.`); }
+  if (forward && to <= p.position) { changeCash(g,p.id,board.salary,`Passed GO · ${board.spaces[0].name}`); addLog(g, `${p.name} collects ${money(board.salary)} at ${board.spaces[0].name}.`); }
   p.position = to;
 }
 function payment(g: GameState, from: number, to: number | null, amount: number, reason: string) {
@@ -93,7 +99,10 @@ function drain(g: GameState, dice: () => number) {
     const debt = g.payments[0], p = g.players[debt.from];
     if (p.bankrupt) { g.payments.shift(); continue; }
     if (p.cash < debt.amount) { g.phase = 'debt'; return; }
-    p.cash -= debt.amount; if (debt.to !== null) g.players[debt.to].cash += debt.amount;
+    const isRent=getBoard(g.boardId).spaces.some(s=>s.price&&s.name===debt.reason);
+    const reason=isRent?`Rent · ${debt.reason}`:debt.reason;
+    changeCash(g,p.id,-debt.amount,`${reason} · To ${debt.to===null?'the bank':g.players[debt.to].name}`);
+    if (debt.to !== null) changeCash(g,debt.to,debt.amount,`${reason} · From ${p.name}`);
     addLog(g, `${p.name} pays ${money(debt.amount)} to ${debt.to === null ? 'the bank' : g.players[debt.to].name} for ${debt.reason}.`, p.id);
     g.payments.shift();
   }
@@ -128,7 +137,7 @@ function applyCard(g: GameState, dice: () => number) {
   if (e.kind !== 'release') (c.id.startsWith('CC') ? g.community : g.chance).push(c.id);
   switch (e.kind) {
     case 'release': p.cards.push(c.id); break;
-    case 'cash': if (e.amount >= 0) p.cash += e.amount; else payment(g, p.id, null, -e.amount, c.title); drain(g, dice); break;
+    case 'cash': if (e.amount >= 0) changeCash(g,p.id,e.amount,`${c.title} · Card reward`); else payment(g, p.id, null, -e.amount, c.title); drain(g, dice); break;
     case 'holding': sendHolding(g); break;
     case 'move': moveTo(g, e.to, true); resolveSpace(g, dice, false, true); break;
     case 'back': moveTo(g, (p.position - e.steps + 40) % 40, false); resolveSpace(g, dice, false, true); break;
@@ -236,7 +245,7 @@ export function transition(state: GameState, action: Action, dice: () => number)
     case 'buy': {
       requireRule(g.phase === 'buy', 'No asset is waiting to be bought.'); const s = board.spaces[p.position], a = g.assets[s.id];
       requireRule(a.owner === null && p.cash >= s.price!, 'Not enough cash; start an auction instead.');
-      p.cash -= s.price!; a.owner = p.id; g.phase = 'manage'; addLog(g, `${p.name} buys ${s.name} for ${money(s.price!)}.`); break;
+      changeCash(g,p.id,-s.price!,`Property purchase · ${s.name}`); a.owner = p.id; g.phase = 'manage'; addLog(g, `${p.name} buys ${s.name} for ${money(s.price!)}.`); break;
     }
     case 'auction': requireRule(g.phase === 'buy', 'No purchase is waiting.'); startAuction(g, p.position); break;
     case 'bid': case 'pass': {
@@ -245,7 +254,7 @@ export function transition(state: GameState, action: Action, dice: () => number)
       else { a.passed.push(bidder.id); addLog(g, `${bidder.name} passes.`, bidder.id); }
       const challengers = a.queue.filter(id => !a.passed.includes(id) && id !== a.leader);
       if (!challengers.length) {
-        if (a.leader !== null) { g.players[a.leader].cash -= a.high; g.assets[a.space].owner = a.leader; addLog(g, `${g.players[a.leader].name} wins ${board.spaces[a.space].name} for ${money(a.high)}.`, a.leader); }
+        if (a.leader !== null) { changeCash(g,a.leader,-a.high,`Auction purchase · ${board.spaces[a.space].name}`); g.assets[a.space].owner = a.leader; addLog(g, `${g.players[a.leader].name} wins ${board.spaces[a.space].name} for ${money(a.high)}.`, a.leader); }
         else addLog(g, 'No bids. The asset remains with the bank.', null);
         g.auction = null; drain(g, dice);
       } else { const index = a.queue.indexOf(a.bidder); for (let i = 1; i <= a.queue.length; i++) { const next = a.queue[(index + i) % a.queue.length]; if (challengers.includes(next)) { a.bidder = next; break; } } }
@@ -258,14 +267,14 @@ export function transition(state: GameState, action: Action, dice: () => number)
       const capacity = debtor.cash + board.spaces.reduce((n, s) => { const a = g.assets[s.id]; if (!a || a.owner !== debtor.id) return n; return n + (!a.mortgaged ? s.price! / 2 : 0) + (a.level * (s.buildingCost || 0) / 2); }, 0);
       requireRule(capacity < debt.amount, 'You can still settle by liquidating and mortgaging assets.');
       for (const s of board.spaces) { const a = g.assets[s.id]; if (!a || a.owner !== debtor.id) continue;
-        debtor.cash += a.level * (s.buildingCost || 0) / 2; a.level = 0;
+        changeCash(g,debtor.id,a.level*(s.buildingCost||0)/2,`Building sale · ${s.name}`); a.level = 0;
         a.owner = debt.to;
         if (debt.to === null) { a.mortgaged = false; g.bankAuctions.push(s.id); }
         else if (a.mortgaged) g.transferCharges.push({ player: debt.to, space: s.id });
       }
-      if (debt.to !== null) { g.players[debt.to].cash += debtor.cash; g.players[debt.to].cards.push(...debtor.cards); }
+      if (debt.to !== null) { changeCash(g,debt.to,debtor.cash,`Bankruptcy settlement · From ${debtor.name}`); g.players[debt.to].cards.push(...debtor.cards); }
       else for (const id of debtor.cards) (id.startsWith('CC') ? g.community : g.chance).push(id);
-      debtor.cash = 0; debtor.cards = []; debtor.bankrupt = true;
+      changeCash(g,debtor.id,-debtor.cash,`Bankruptcy settlement · ${debt.reason}`); debtor.cards = []; debtor.bankrupt = true;
       g.payments = g.payments.filter(x => x.from !== debtor.id); g.transferCharges = g.transferCharges.filter(x => x.player !== debtor.id);
       addLog(g, `${debtor.name} is bankrupt. Assets ${debt.to === null ? 'return to the bank' : `transfer to ${g.players[debt.to].name}`}.`, debtor.id);
       if (!won(g)) drain(g, dice); break;
@@ -281,11 +290,11 @@ export function transition(state: GameState, action: Action, dice: () => number)
     case 'build': case 'sell': case 'mortgage': case 'redeem': case 'liquidate': {
       const error = assetActionError(g, action.type, action.space, action.player); requireRule(!error, error || 'Unavailable action.');
       const s = board.spaces[action.space], a = g.assets[s.id], owner = g.players[action.player];
-      if (action.type === 'build') { owner.cash -= s.buildingCost!; a.level++; }
-      if (action.type === 'sell') { owner.cash += s.buildingCost! / 2; a.level--; }
-      if (action.type === 'liquidate') for (const x of groupSpaces(g, s)) { owner.cash += g.assets[x.id].level * x.buildingCost! / 2; g.assets[x.id].level = 0; }
-      if (action.type === 'mortgage') { owner.cash += s.price! / 2; a.mortgaged = true; }
-      if (action.type === 'redeem') { owner.cash -= redemptionCost(s); a.mortgaged = false; }
+      if (action.type === 'build') { changeCash(g,owner.id,-s.buildingCost!,`Construction · ${s.name}`); a.level++; }
+      if (action.type === 'sell') { changeCash(g,owner.id,s.buildingCost!/2,`Building sale · ${s.name}`); a.level--; }
+      if (action.type === 'liquidate') for (const x of groupSpaces(g, s)) { changeCash(g,owner.id,g.assets[x.id].level*x.buildingCost!/2,`Building sale · ${x.name}`); g.assets[x.id].level = 0; }
+      if (action.type === 'mortgage') { changeCash(g,owner.id,s.price!/2,`Mortgage proceeds · ${s.name}`); a.mortgaged = true; }
+      if (action.type === 'redeem') { changeCash(g,owner.id,-redemptionCost(s),`Mortgage redemption · ${s.name}`); a.mortgaged = false; }
       addLog(g, `${owner.name}: ${action.type} ${s.name}.`, owner.id); break;
     }
     case 'readTradeNotifications': {
@@ -312,11 +321,12 @@ export function transition(state: GameState, action: Action, dice: () => number)
     }
     case 'acceptTrade': {
       requireRule(g.phase === 'trade' && g.trade, 'No trade is waiting.'); const t = g.trade, error = tradeError(g, t); requireRule(!error, error || 'Invalid trade.');
-      const from = g.players[t.from], to = g.players[t.to]; from.cash += t.takeCash - t.giveCash; to.cash += t.giveCash - t.takeCash;
+      const from = g.players[t.from], to = g.players[t.to]; changeCash(g,from.id,-t.giveCash,`Trade payment · To ${to.name}`);changeCash(g,to.id,t.giveCash,`Trade payment · From ${from.name}`);
+      changeCash(g,to.id,-t.takeCash,`Trade payment · To ${from.name}`);changeCash(g,from.id,t.takeCash,`Trade payment · From ${to.name}`);
       const notice = g.tradeNotifications?.slice().reverse().find(n=>n.status==='proposed');
       if (notice) { notice.status = 'accepted'; notice.read = false; notice.readBy = []; }
       else g.tradeNotifications = [...(g.tradeNotifications ?? []), {from:t.from,to:t.to,status:'accepted',read:false}];
-      for (const [ids, recipient] of [[t.give, t.to], [t.take, t.from]] as const) for (const id of ids) { const a = g.assets[id]; a.owner = recipient; if (a.mortgaged) g.players[recipient].cash -= transferInterest(board.spaces[id]); }
+      for (const [ids, recipient] of [[t.give, t.to], [t.take, t.from]] as const) for (const id of ids) { const a = g.assets[id]; a.owner = recipient; if (a.mortgaged) changeCash(g,recipient,-transferInterest(board.spaces[id]),`Mortgage transfer interest · ${board.spaces[id].name}`); }
       from.cards = from.cards.filter(c => !t.giveCards.includes(c)).concat(t.takeCards); to.cards = to.cards.filter(c => !t.takeCards.includes(c)).concat(t.giveCards);
       addLog(g, `${from.name} and ${to.name} complete a trade. Incoming mortgages remain active; 10% transfer interest is paid.`, null);
       g.trade = null; if (g.tradeReturn === 'roll') g.afterPayments = 'roll'; drain(g, dice); break;

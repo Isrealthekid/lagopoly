@@ -3,7 +3,7 @@ const browser=await chromium.launch({channel:'msedge',headless:true});
 try{
  const page=await browser.newPage({viewport:{width:390,height:844}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://localhost:5174/',{waitUntil:'networkidle'});await page.getByRole('button',{name:'Start game',exact:true}).click();
- for(const [width,height] of [[390,844],[820,1180],[1024,768],[657,554],[844,390]]){
+ for(const [width,height] of [[1440,900],[1920,1080],[390,844],[820,1180],[1024,768],[657,554],[844,390]]){
   await page.setViewportSize({width,height});await page.waitForTimeout(350);
   const scene=await page.locator('.depth-view').boundingBox();assert.equal(scene.x,0);assert.equal(scene.y,0);assert.equal(scene.width,width);assert.equal(scene.height,height);
   const token=await page.locator('.active-token').boundingBox();assert.ok(token.x>=0&&token.x+token.width<=width&&token.y>=100&&token.y+token.height<height-110,'Camera lost the active piece');

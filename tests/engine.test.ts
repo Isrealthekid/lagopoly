@@ -200,3 +200,27 @@ describe('complete economic game simulations',()=>{
     }
   });
 });
+
+describe('Money notification events',()=>{
+  it('keeps salary and tax separate even when their net cash change is zero',()=>{
+    const g=fresh();g.current=0;g.players[0].position=38;
+    const after=act(g,{type:'roll'},2,2);
+    expect(after.moneyEvents?.map(e=>e.amount)).toEqual([lagos.salary,-lagos.spaces[2].amount!]);
+    expect(after.moneyEvents?.[0].reason).toContain('Passed GO');
+    expect(after.moneyEvents?.[1].reason).toContain(lagos.spaces[2].name);
+    expect(after.players[0].cash).toBe(g.players[0].cash+lagos.salary-lagos.spaces[2].amount!);
+  });
+  it('explains both sides of a rent payment',()=>{
+    const g=fresh();g.current=0;g.assets[3].owner=1;
+    const after=act(g,{type:'roll'},1,2),rent=fee(g,lagos.spaces[3],3);
+    expect(after.moneyEvents?.map(e=>({player:e.player,amount:e.amount}))).toEqual([{player:0,amount:-rent},{player:1,amount:rent}]);
+    expect(after.moneyEvents?.[0].reason).toContain('Rent');
+    expect(after.moneyEvents?.[0].reason).toContain('To Tunde');
+    expect(after.moneyEvents?.[1].reason).toContain('From Ada');
+  });
+  it('names the property being purchased',()=>{
+    const g=fresh();g.current=0;g.phase='buy';g.players[0].position=1;
+    const after=act(g,{type:'buy'});
+    expect(after.moneyEvents?.[0]).toMatchObject({player:0,amount:-lagos.spaces[1].price!,reason:`Property purchase · ${lagos.spaces[1].name}`});
+  });
+});

@@ -4,6 +4,7 @@ import { getBoard } from './data/boards';
 import { createSession, readSave, validateSave, type Session } from './game/session';
 import { assetActionError, compactMoney, fee, inventory, managementPlayer, money } from './game/engine';
 import type { Action, GameState, Space } from './game/types';
+import { MoneyToasts } from './components/MoneyToasts';
 import { PromptPresence } from './components/PromptPresence';
 import { Board, playerColors, Token, spaceIcon } from './components/Board';
 import { FeedbackContext, Modal } from './components/Modal';
@@ -29,9 +30,8 @@ export default function App() {
   const [artifactFinish,setArtifactFinish]=useState<'silver'|'gold'>(()=>{try{return localStorage.getItem('naija-estates.artifact-finish')==='gold'?'gold':'silver';}catch{return 'silver';}});
   const changeArtifactFinish=(finish:'silver'|'gold')=>{setArtifactFinish(finish);try{localStorage.setItem('naija-estates.artifact-finish',finish);}catch{/* Keep the selected finish for this session. */}};
   const [viewDepth,setViewDepth] = useState(true);
-  const [compact,setCompact] = useState(()=>window.matchMedia('(max-width:1100px)').matches);
   const [arrived,setArrived] = useState(()=>initial.session.get().players.map(p=>p.position).join(','));
-  useEffect(()=>{const media=window.matchMedia('(max-width:1100px)');const update=()=>setCompact(media.matches);media.addEventListener('change',update);return ()=>media.removeEventListener('change',update);},[]);
+
   const [moving,setMoving] = useState(false);
   const [rolling,setRolling] = useState(false), [tab,setTab] = useState<'activity'|'portfolio'>('activity');
   const [portfolioPlayer,setPortfolioPlayer] = useState<number|null>(null), [bid,setBid] = useState('1000');
@@ -45,7 +45,7 @@ export default function App() {
   const actor = managementPlayer(game), pending = game.pendingCard ? [...board.community,...board.chance].find(c=>c.id===game.pendingCard) : null;
   const stock = inventory(game), space = board.spaces[selected];
   const destinationReady=arrived===game.players.map(p=>p.position).join(',');
-  const showPrompt=!(compact&&viewDepth)||(!rolling&&!moving&&destinationReady&&(!['roll','manage'].includes(game.phase)||current.holding||game.transferCharges.length>0));
+  const showPrompt=!viewDepth||(!rolling&&!moving&&destinationReady&&(!['roll','manage'].includes(game.phase)||current.holding||game.transferCharges.length>0));
   useEffect(()=> {
     session.start();
     const unsub=session.subscribe(g=>setGame(g));
@@ -181,6 +181,7 @@ export default function App() {
         <button className="secondary trade-button" disabled={!started||(!canTrade&&!tradeNotices.length&&!game.trade)||rolling||moving} onClick={openTrade}><ArrowLeftRight size={20}/><span>Trade</span>{tradeBadge}</button>
       </nav>
     </main>
+    <MoneyToasts game={game} busy={rolling||moving||!destinationReady} />
     {setup&&<Setup finish={artifactFinish} changeFinish={changeArtifactFinish} start={start} username={account?.username} online={()=>{setSetup(false);setHub(true);}} close={started?()=>setSetup(false):undefined} hasGame={started}/ >}
     {hub&&<Multiplayer account={account} currentRoom={onlineRoom?.code} onAccount={updateAccount} onGame={startOnline} close={()=>{setHub(false);if(!started)setSetup(true);}}/>}
     {trade&&<Trade game={game} board={board} from={actor} close={()=>setTrade(false)} propose={proposal=>{if(send({type:'trade',proposal}))setTrade(false);}}/>}

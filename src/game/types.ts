@@ -8,7 +8,9 @@ export interface Asset { owner: number | null; level: number; mortgaged: boolean
 export interface Payment { from: number; to: number | null; amount: number; reason: string }
 export interface Auction { space: number; bidder: number; high: number; leader: number | null; passed: number[]; queue: number[] }
 export interface Trade { from: number; to: number; give: number[]; take: number[]; giveCash: number; takeCash: number; giveCards: string[]; takeCards: string[] }
+export interface MoneyEvent { id:number; player:number; amount:number; reason:string }
 export interface GameState {
+  moneyEvents?: MoneyEvent[];
   version: 1; layoutVersion?: number; boardId: string; players: Player[]; assets: Record<number, Asset>; current: number;
   aiPlayers?: number[];
   tradeNotifications?: { from: number; to: number; status: 'proposed' | 'accepted' | 'declined'; read: boolean; readBy?: number[] }[];
