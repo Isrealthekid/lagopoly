@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { lagos } from '../src/data/lagos';
 import { assetActionError, createGame, fee, inventory, transition } from '../src/game/engine';
 import { createSession, validateSave } from '../src/game/session';
@@ -141,13 +141,16 @@ describe('framework and durable browser snapshots',()=>{
     expect(validateSave(validateSave(old)).state.G).toEqual(migrated);
     session.stop();
   });
-  it('restores complete framework state, pending decisions and random continuation',()=>{
+  it('restores complete framework state and progresses identically with the same fresh dice',()=>{
     const session=createSession('lagos',['Ada','Tunde'],[0,1]);session.dispatch({type:'roll'});
     const save=validateSave(JSON.parse(JSON.stringify(session.snapshot())));
     const restored=createSession('lagos',['Ada','Tunde'],[0,1],save);expect(restored.get()).toEqual(session.get());
+    const dice=vi.spyOn(globalThis.crypto,'getRandomValues').mockImplementation(<T extends ArrayBufferView|null>(array:T):T=>{(array as unknown as Uint32Array).fill(1);return array;});
+    try {
     const progress=(s:ReturnType<typeof createSession>)=>{const g=s.get();if(g.phase==='buy')s.dispatch({type:'buy'});if(s.get().phase==='card')s.dispatch({type:'card'});if(s.get().phase==='manage')s.dispatch({type:'end'});if(s.get().phase==='roll')s.dispatch({type:'roll'});};
     progress(session);progress(restored);expect(restored.get()).toEqual(session.get());
     session.stop();restored.stop();
+    }finally{dice.mockRestore();}
   });
   it('rejects corrupt ownership, missing decks and unsupported saves',()=>{
     const s=createSession('lagos',['Ada','Tunde'],[0,1]).snapshot();

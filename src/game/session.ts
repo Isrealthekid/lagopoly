@@ -1,3 +1,4 @@
+import { secureDie } from './random';
 import { Client } from 'boardgame.io/client';
 import { INVALID_MOVE } from 'boardgame.io/core';
 import type { Game, State } from 'boardgame.io';
@@ -138,10 +139,10 @@ export function createSession(boardId: string, names: string[], tokens: number[]
   let error: string | null = null;
   const game: Game<GameState> = {
     name: 'naija-estates', minPlayers: 2, maxPlayers: 4, disableUndo: true,
-    setup: ({ random }) => ({...createGame(getBoard(boardId), names, tokens, items => random.Shuffle(items), () => random.D6() as number),aiPlayers}),
+    setup: ({ random }) => ({...createGame(getBoard(boardId), names, tokens, items => random.Shuffle(items), secureDie),aiPlayers}),
     moves: {
-      act: { undoable: false, move: ({ G, random }, action: Action) => {
-        try { error = null; return transition(G, action, () => random.D6() as number); }
+      act: { undoable: false, move: ({ G }, action: Action) => {
+        try { error = null; return transition(G, action, secureDie); }
         catch (e) { error = e instanceof Error ? e.message : 'Action unavailable.'; return INVALID_MOVE; }
       } },
     },
