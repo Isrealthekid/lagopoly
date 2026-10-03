@@ -3,10 +3,9 @@ if(process.env.NODE_ENV === "production" && !/^postgres(?:ql)?:\/\//.test(proces
 const service = createService({
   database: process.env.SUPABASE_DB_URL ?? process.env.DATABASE_PATH,
   origin:
-    process.env.APP_ORIGIN ??
-    (process.env.NODE_ENV === "production"
-      ? undefined
-      : "http://localhost:5173"),
+    process.env.NODE_ENV === "production"
+      ? process.env.APP_ORIGIN
+      : process.env.DEV_APP_ORIGIN ?? "http://localhost:5173",
   production: process.env.NODE_ENV === "production",
   staticDir: process.env.NODE_ENV === "production" ? "dist" : undefined,
 });

@@ -42,7 +42,13 @@ describe('secure accounts and authoritative rooms',()=>{
     expect((await request('/api/administrator/delete',{id:created.body.user.id,confirm:'wrong'},user.cookie)).status).toBe(400);
     expect((await request('/api/administrator/delete',{id:created.body.user.id,confirm:'SecondAdmin'},user.cookie)).status).toBe(200);
     expect((await request('/api/me',undefined,signedIn.cookie)).body.user).toBeNull();
-    expect((await request('/api/administrator/delete',{id:normal.body.user.id,confirm:'NormalUser'},user.cookie)).status).toBe(200);
+    expect((await request('/api/administrator/edit',{id:normal.body.user.id,username:'RenamedUser'},normal.cookie)).status).toBe(403);
+    expect((await request('/api/administrator/edit',{id:normal.body.user.id,username:'Admin'},user.cookie)).status).toBe(409);
+    expect((await request('/api/administrator/edit',{id:normal.body.user.id,username:'RenamedUser',password:'NewPassword123!'},user.cookie)).status).toBe(200);
+    expect((await request('/api/me',undefined,normal.cookie)).body.user).toBeNull();
+    expect((await request('/api/login',{username:'RenamedUser',password:'NewPassword123!'})).status).toBe(200);
+    expect((await request('/api/login',{username:'NormalUser',password:'CorrectHorseBattery123!'})).status).toBe(401);
+    expect((await request('/api/administrator/delete',{id:normal.body.user.id,confirm:'RenamedUser'},user.cookie)).status).toBe(200);
   });
   it('accepts eight-character passwords and rejects shorter passwords', async()=>{
     const {request}=await fixture();

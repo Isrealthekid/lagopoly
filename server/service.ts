@@ -156,6 +156,18 @@ export function createService(options: { database?: string; origin?: string; pro
           await db.prepare('INSERT INTO administrators(user_id) VALUES (?)').run(id);
           return json(res,201,{user:{id,username}});
         }
+        if(route==='/api/administrator/edit'&&method==='POST'){
+          assert(await isAdmin(user.id),403,'Administrator access is required.');limit(`admin:${user.id}`,10);
+          const input=await body(req),username=typeof input.username==='string'?input.username.trim():'',password=typeof input.password==='string'?input.password:'';
+          assert(typeof input.id==='string',400,'Account ID is required.');
+          assert(/^[a-zA-Z0-9_]{3,20}$/.test(username)&&(!password||password.length>=8&&password.length<=128),400,'Use a valid username and a password of 8-128 characters.');
+          const target=await db.prepare('SELECT id FROM users WHERE id=?').get(input.id);assert(target,404,'Account not found.');
+          assert(!await db.prepare('SELECT id FROM users WHERE key=? AND id<>?').get(username.toLowerCase(),input.id),409,'That username is unavailable.');
+          assert(!(await allRooms()).some(r=>r.members.some(m=>m.id===input.id)),409,'Edit this account after its room closes.');
+          await db.prepare('UPDATE users SET username=?,key=? WHERE id=?').run(username,username.toLowerCase(),input.id);
+          if(password){const salt=randomBytes(16).toString('hex');await db.prepare('UPDATE users SET salt=?,password=? WHERE id=?').run(salt,encodeHash(await passwordHash(password,salt)),input.id);await db.prepare('DELETE FROM sessions WHERE "user"=?').run(input.id);}
+          return json(res,200,{ok:true});
+        }
         if(route==='/api/administrator/delete'&&method==='POST'){
           assert(await isAdmin(user.id),403,'Administrator access is required.');const input=await body(req);
           assert(typeof input.id==='string'&&input.id!==user.id,400,'You cannot delete your own account.');
@@ -257,7 +269,7 @@ export function createService(options: { database?: string; origin?: string; pro
       }
       throw new HttpError(404,'Not found.');
     }catch(error){throw error;}
-    }); actual.writeHead(status,headers);actual.end(output);
+    },req.method==='GET'||req.method==='HEAD'); actual.writeHead(status,headers);actual.end(output);
     } catch(error) {
       failures++;
       if(!(error instanceof HttpError))console.error('Server request failed:', error instanceof Error?error.message:'database error');
@@ -265,7 +277,8 @@ export function createService(options: { database?: string; origin?: string; pro
       json(actual,error instanceof HttpError?error.status:500,{error:error instanceof HttpError?error.message:'The server could not complete this request.'});
     }
   });
-  const aiTimer=setInterval(()=>{ void db.transaction(async()=>{
+  let aiRunning=false;
+  const aiTimer=setInterval(()=>{ if(aiRunning)return;aiRunning=true;void db.transaction(async()=>{
     for(const room of await allRooms()){
       let expired=false;
       for(const [seat,member] of room.members.entries())if(room.game&&member.left&&member.returnBy&&member.returnBy<=Date.now()){
@@ -280,7 +293,7 @@ export function createService(options: { database?: string; origin?: string; pro
         else await store(room);
       }catch(error){console.error('Online AI move failed:',error);}
     }
-  }).catch(error=>console.error("Online AI database operation failed:",error instanceof Error?error.message:"database error")); },650);aiTimer.unref();
+  }).catch(error=>console.error("Online AI database operation failed:",error instanceof Error?error.message:"database error")).finally(()=>{aiRunning=false;}); },650);aiTimer.unref();
   const runCleanup=()=>db.transaction(cleanup).catch(error=>console.error("Database cleanup failed:",error instanceof Error?error.message:"database error"));
   const timer=setInterval(runCleanup,60000);timer.unref();
   return {server,db,close:async()=>{clearInterval(timer);clearInterval(aiTimer);server.close();await db.close();}};

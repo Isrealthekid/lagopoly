@@ -14,7 +14,7 @@ export function databaseTlsOptions() {
 type Row = Record<string, unknown>;
 export interface Database {
   prepare(sql: string): { get(...values: unknown[]): Promise<Row | undefined>; all(...values: unknown[]): Promise<Row[]>; run(...values: unknown[]): Promise<void> };
-  transaction<T>(fn: () => Promise<T>): Promise<T>;
+  transaction<T>(fn: () => Promise<T>, readOnly?: boolean): Promise<T>;
   close(): Promise<void>;
 }
 export function openDatabase(connection: string): Database {
@@ -33,12 +33,12 @@ export function openDatabase(connection: string): Database {
     };
     return {
       prepare: sql => ({ get: async (...v) => (await query(sql,v)).rows[0], all: async (...v) => (await query(sql,v)).rows, run: async (...v) => { await query(sql,v); } }),
-      transaction: async fn => {
+      transaction: async (fn,readOnly=false) => {
         const client = await pool.connect();
         try {
-          await client.query('BEGIN');
+          await client.query(readOnly?'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY':'BEGIN');
           // Serialize game mutations across processes, including joins and AI turns.
-          await client.query('SELECT pg_advisory_xact_lock(734829105)');
+          if(!readOnly)await client.query('SELECT pg_advisory_xact_lock(734829105)');
           await client.query('SET LOCAL search_path TO monopoly, pg_catalog');
           const result = await current.run(client,fn);
           await client.query('COMMIT');
