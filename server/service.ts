@@ -19,7 +19,9 @@ const encodeHash=(hash:Buffer)=>`scrypt$32768$8$3$${hash.toString('hex')}`;
 const dice=()=>randomInt(1,7);
 const shuffle=<T,>(items:T[])=>{const copy=[...items];for(let i=copy.length-1;i>0;i--){const j=randomInt(i+1);[copy[i],copy[j]]=[copy[j],copy[i]];}return copy;};
 
-export function createService(options: { database?: string; origin?: string; production?: boolean; staticDir?: string } = {}) {
+export function createService(options: { database?: string; origin?: string; production?: boolean; staticDir?: string; adminUserIds?:string[] } = {}) {
+  const adminIds=new Set(options.adminUserIds??(process.env.ADMIN_USER_IDS??'').split(',').map(id=>id.trim()).filter(Boolean));
+  const launched=Date.now();let requests=0,failures=0;
   const db=openDatabase(options.database ?? resolve('server-data/accounts.sqlite'));
   const production=options.production ?? false;
   if(production&&!options.origin)throw new Error('APP_ORIGIN is required in production.');
@@ -35,6 +37,7 @@ export function createService(options: { database?: string; origin?: string; pro
     assert(++entry.count<=maximum,429,'Too many requests. Try again shortly.');
   };
   const allRooms=async()=>(await db.prepare('SELECT payload FROM rooms').all()).map(r=>JSON.parse(r.payload as string) as Room);
+  const isAdmin=async(id:string)=>adminIds.has(id)||!!await db.prepare('SELECT user_id FROM administrators WHERE user_id=?').get(id);
   const store=async(room:Room)=>{room.updated=Date.now();await db.prepare('INSERT INTO rooms(code,payload) VALUES (?,?) ON CONFLICT(code) DO UPDATE SET payload=excluded.payload').run(room.code,JSON.stringify(room));};
   const remove=async(code:string)=>await db.prepare('DELETE FROM rooms WHERE code=?').run(code);
   const cleanup=async()=>{
@@ -85,6 +88,7 @@ export function createService(options: { database?: string; origin?: string; pro
     room.members.push({...user,ready:false});room.revision++;await store(room);return view(room,user);
   };
   const server=createServer(async(req,res)=>{
+    requests++;
     // Do not send a successful response until database COMMIT succeeds.
     let status=200, headers:Record<string,string>={}, output:string|Buffer='';
     const reply={setHeader:(name:string,value:string)=>{headers[name]=value;},writeHead:(code:number,values:Record<string,string>)=>{status=code;Object.assign(headers,values);},end:(value:string|Buffer)=>{output=value;}} as unknown as ServerResponse;
@@ -131,6 +135,43 @@ export function createService(options: { database?: string; origin?: string; pro
       }
       if(route.startsWith('/api/')) {
         const user=await userFor(req);assert(user,401,'Sign in to continue.');
+        if(route==='/api/administrator'&&method==='GET'){
+          assert(await isAdmin(user.id),403,'Administrator access is required.');
+          const now=Date.now();
+          const accounts=await db.prepare('SELECT id,username FROM users ORDER BY username').all();
+          const admins=new Set([...(await db.prepare('SELECT user_id FROM administrators').all()).map(a=>a.user_id),...adminIds]);
+          const sessions=await db.prepare('SELECT "user" AS account,expires FROM sessions WHERE expires>?').all(now);
+          const rooms=(await allRooms()).map(room=>({code:room.code,host:room.members.find(m=>m.id===room.host)?.username??'',public:room.public,cap:room.cap,updated:room.updated,revision:room.revision,members:room.members,game:room.game?{phase:room.game.phase,turn:room.game.turn,current:room.game.current,players:room.game.players,aiPlayers:room.game.aiPlayers??[],assets:room.game.assets,logs:room.game.logs.slice(0,30)}:null}));
+          const results=await db.prepare('SELECT payload FROM completed WHERE expires>?').all(now);
+          return json(res,200,{generatedAt:now,operator:user,server:{uptimeSeconds:Math.floor((now-launched)/1000),requests,failures,memoryMB:Math.round(process.memoryUsage().rss/1048576),database:'Connected'},accounts:accounts.map(a=>({...a,admin:admins.has(a.id),sessions:sessions.filter(s=>s.account===a.id).length})),sessionCount:sessions.length,rooms,completed:results.map(r=>{const room=JSON.parse(r.payload as string) as Room;return {code:room.code,winner:room.game?.players[room.game.winner!]?.name??'Unknown',players:room.members.map(m=>m.username),updated:room.updated};})});
+        }
+        if(route==='/api/administrator/create'&&method==='POST'){
+          assert(await isAdmin(user.id),403,'Administrator access is required.');
+          limit(`admin:${user.id}`,10);const input=await body(req);
+          const username=typeof input.username==='string'?input.username.trim():'',password=typeof input.password==='string'?input.password:'';
+          assert(/^[a-zA-Z0-9_]{3,20}$/.test(username)&&password.length>=8&&password.length<=128,400,'Use a valid username and a password of 8-128 characters.');
+          assert(!await db.prepare('SELECT id FROM users WHERE key=?').get(username.toLowerCase()),409,'That username is unavailable.');
+          const id=randomUUID(),salt=randomBytes(16).toString('hex');
+          await db.prepare('INSERT INTO users(id,username,key,salt,password) VALUES (?,?,?,?,?)').run(id,username,username.toLowerCase(),salt,encodeHash(await passwordHash(password,salt)));
+          await db.prepare('INSERT INTO administrators(user_id) VALUES (?)').run(id);
+          return json(res,201,{user:{id,username}});
+        }
+        if(route==='/api/administrator/delete'&&method==='POST'){
+          assert(await isAdmin(user.id),403,'Administrator access is required.');const input=await body(req);
+          assert(typeof input.id==='string'&&input.id!==user.id,400,'You cannot delete your own account.');
+          const target=await db.prepare('SELECT id,username FROM users WHERE id=?').get(input.id);assert(target,404,'Account not found.');
+          assert(input.confirm===target.username,400,'Type the account username to confirm deletion.');
+          assert(!adminIds.has(input.id),409,'Remove this administrator from ADMIN_USER_IDS and redeploy before deleting it.');
+          assert(!(await allRooms()).some(r=>r.members.some(m=>m.id===input.id)),409,'This account belongs to a room. Delete it after that room closes.');
+          if(await isAdmin(input.id)){
+            const accounts=await db.prepare('SELECT id FROM users').all();let count=0;for(const a of accounts)if(await isAdmin(a.id as string))count++;
+            assert(count>1,409,'The last administrator cannot be deleted.');
+          }
+          await db.prepare('DELETE FROM sessions WHERE "user"=?').run(input.id);
+          await db.prepare('DELETE FROM administrators WHERE user_id=?').run(input.id);
+          await db.prepare('DELETE FROM users WHERE id=?').run(input.id);
+          return json(res,200,{ok:true});
+        }
         if(route==='/api/logout'&&method==='POST') {
           const token=req.headers.cookie?.split(';').map(s=>s.trim()).find(s=>s.startsWith(`${cookieName}=`))?.slice(cookieName.length+1);
           if(token)await db.prepare('DELETE FROM sessions WHERE token=?').run(hashToken(token));
@@ -218,6 +259,7 @@ export function createService(options: { database?: string; origin?: string; pro
     }catch(error){throw error;}
     }); actual.writeHead(status,headers);actual.end(output);
     } catch(error) {
+      failures++;
       if(!(error instanceof HttpError))console.error('Server request failed:', error instanceof Error?error.message:'database error');
       actual.removeHeader('Set-Cookie');
       json(actual,error instanceof HttpError?error.status:500,{error:error instanceof HttpError?error.message:'The server could not complete this request.'});

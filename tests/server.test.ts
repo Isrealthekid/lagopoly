@@ -7,8 +7,8 @@ import { join } from 'node:path';
 const services:ReturnType<typeof createService>[]=[];
 const staticFixtures:string[]=[];
 afterEach(async()=>{for(const service of services.splice(0))await service.close();for(const folder of staticFixtures.splice(0)){unlinkSync(join(folder,'index.html'));rmdirSync(folder);}});
-async function fixture(){
-  const service=createService({database:':memory:',origin:'http://localhost:5173'});services.push(service);
+async function fixture(adminUserIds:string[]=[]){
+  const service=createService({database:':memory:',origin:'http://localhost:5173',adminUserIds});services.push(service);
   await new Promise<void>(resolve=>service.server.listen(0,'127.0.0.1',resolve));
   const url=`http://127.0.0.1:${(service.server.address() as AddressInfo).port}`;
   const request=async(path:string,data?:unknown,cookie='',origin='http://localhost:5173')=>{
@@ -19,6 +19,31 @@ async function fixture(){
   return {service,request,account};
 }
 describe('secure accounts and authoritative rooms',()=>{
+  it('restricts administrator monitoring and never exposes credentials or session tokens',async()=>{
+    const {service,request,account}=await fixture(['admin-test']);
+    expect((await request('/api/administrator')).status).toBe(401);
+    const user=await account('Operator');
+    expect((await request('/api/administrator',undefined,user.cookie)).status).toBe(403);
+    const row=(await service.db.prepare('SELECT * FROM users WHERE username=?').get('Operator'))!;
+    await service.db.prepare('INSERT INTO users(id,username,key,salt,password) VALUES (?,?,?,?,?)').run('admin-test','Admin','admin',row.salt,row.password);
+    await service.db.prepare('UPDATE sessions SET "user"=? WHERE "user"=?').run('admin-test',row.id);
+    await request('/api/rooms',{cap:2,public:false},user.cookie);
+    const result=await request('/api/administrator',undefined,user.cookie);
+    expect(result.status).toBe(200);expect(result.body.rooms).toHaveLength(1);expect(result.body.sessionCount).toBe(1);
+    const raw=JSON.stringify(result.body);expect(raw).not.toContain(row.password);expect(raw).not.toContain(row.salt);expect(raw).not.toContain('token');expect(raw).not.toContain('community');
+    const normal=await account('NormalUser');
+    expect((await request('/api/administrator/create',{username:'Intruder',password:'Abc123!?'},normal.cookie)).status).toBe(403);
+    expect((await request('/api/administrator/delete',{id:'admin-test',confirm:'Admin'},normal.cookie)).status).toBe(403);
+    const created=await request('/api/administrator/create',{username:'SecondAdmin',password:'Abc123!?'},user.cookie);
+    expect(created.status).toBe(201);
+    const signedIn=await request('/api/login',{username:'SecondAdmin',password:'Abc123!?'});
+    expect((await request('/api/administrator',undefined,signedIn.cookie)).status).toBe(200);
+    expect((await request('/api/administrator/delete',{id:created.body.user.id,confirm:'SecondAdmin'},signedIn.cookie)).status).toBe(400);
+    expect((await request('/api/administrator/delete',{id:created.body.user.id,confirm:'wrong'},user.cookie)).status).toBe(400);
+    expect((await request('/api/administrator/delete',{id:created.body.user.id,confirm:'SecondAdmin'},user.cookie)).status).toBe(200);
+    expect((await request('/api/me',undefined,signedIn.cookie)).body.user).toBeNull();
+    expect((await request('/api/administrator/delete',{id:normal.body.user.id,confirm:'NormalUser'},user.cookie)).status).toBe(200);
+  });
   it('accepts eight-character passwords and rejects shorter passwords', async()=>{
     const {request}=await fixture();
     expect((await request('/api/register',{username:'TooShort',password:'Abc123!'})).status).toBe(400);

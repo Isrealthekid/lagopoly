@@ -1,0 +1,35 @@
+ADMINISTRATOR DASHBOARD
+
+ADMIN ACCOUNT MANAGEMENT
+Open /administrator/create while signed in as an administrator to create
+another administrator. Accounts > Account management lists administrators
+and players and supports permanent account deletion with typed confirmation.
+Deleting an account revokes all of its sessions. Self-deletion, deletion of
+the last admin, and deletion of accounts belonging to rooms are blocked.
+Environment-allowlisted administrators must first be removed from
+ADMIN_USER_IDS before another admin can delete their accounts.
+The private monopoly.administrators table was added to the Monopoly Supabase
+project. supabase/administrators.sql is its deployment reference.
+The first admin still requires ADMIN_USER_IDS; this is not public registration.
+
+Open /administrator on the same website as the game.
+The dashboard is read-only and refreshes its server snapshot every two seconds.
+It displays current rooms, players, cash, assets, recent game activity, account
+IDs, valid session counts, server health, and recently completed room results.
+Valid sessions are not a count of users currently online. Results follow the
+existing 15-minute completed-room retention, not a permanent game history.
+
+ACCESS
+1. Create a normal game account and sign in.
+2. Retrieve that account's ID from GET /api/me while signed in, or from the
+   users table in the private monopoly database schema.
+3. Set ADMIN_USER_IDS in the backend environment to that exact account ID.
+   Multiple administrator IDs can be separated by commas.
+4. Restart/redeploy the backend, then sign in at /administrator.
+No account is an administrator by default. The server enforces access.
+Never use a public username as the administrator authorization identifier.
+No password hashes, salts, session tokens, database credentials, or hidden
+deck contents are returned by the dashboard endpoint.
+
+Server counters cover this instance since startup; they are not a persistent
+audit history. Database/TLS configuration must work before monitoring is live.

@@ -55,7 +55,8 @@ export function openDatabase(connection: string): Database {
     CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,username TEXT NOT NULL,key TEXT UNIQUE NOT NULL,salt TEXT NOT NULL,password TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY,user TEXT NOT NULL REFERENCES users(id),expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS rooms(code TEXT PRIMARY KEY,payload TEXT NOT NULL);
-    CREATE TABLE IF NOT EXISTS completed(code TEXT PRIMARY KEY,payload TEXT NOT NULL,expires INTEGER NOT NULL);`);
+    CREATE TABLE IF NOT EXISTS completed(code TEXT PRIMARY KEY,payload TEXT NOT NULL,expires INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS administrators(user_id TEXT PRIMARY KEY REFERENCES users(id));`);
   let queue: Promise<unknown> = Promise.resolve();
   return {
     prepare: sql => ({ get: async (...v) => sqlite.prepare(sql).get(...v as never[]) as Row|undefined, all: async (...v) => sqlite.prepare(sql).all(...v as never[]) as Row[], run: async (...v) => {sqlite.prepare(sql).run(...v as never[]);} }),
