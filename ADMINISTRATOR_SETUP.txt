@@ -1,5 +1,12 @@
 ADMINISTRATOR DASHBOARD
 
+DATABASE TLS
+The server now bundles the Supabase Root 2021 CA certificate and retains
+strict TLS verification. SUPABASE_DB_CA or SUPABASE_DB_CA_FILE can override
+the bundled certificate when your project requires a different trusted CA.
+Certificate source:
+https://supabase-downloads.s3.ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt
+
 ADMIN ACCOUNT MANAGEMENT
 Open /administrator/create while signed in as an administrator to create
 another administrator. Accounts > Account management lists administrators

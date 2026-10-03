@@ -7,7 +7,7 @@ import { rootCertificates } from 'node:tls';
 
 export function databaseTlsOptions() {
   const certificate=process.env.SUPABASE_DB_CA?.replace(/\\n/g,'\n') ??
-    (process.env.SUPABASE_DB_CA_FILE ? readFileSync(process.env.SUPABASE_DB_CA_FILE,'utf8') : undefined);
+    (process.env.SUPABASE_DB_CA_FILE ? readFileSync(process.env.SUPABASE_DB_CA_FILE,'utf8') : readFileSync(new URL('./certificates/supabase-root-2021.crt',import.meta.url),'utf8'));
   return {rejectUnauthorized:true,...(certificate ? {ca:[...rootCertificates,certificate]} : {})};
 }
 

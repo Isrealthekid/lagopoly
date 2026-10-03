@@ -3,6 +3,13 @@ import { mkdtempSync, existsSync, unlinkSync, rmdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { databaseTlsOptions, openDatabase } from '../server/database';
+import { X509Certificate } from 'node:crypto';
+it('bundles a valid Supabase root CA without disabling verification',()=>{
+  vi.stubEnv('SUPABASE_DB_CA',undefined);vi.stubEnv('SUPABASE_DB_CA_FILE',undefined);
+  const ssl=databaseTlsOptions(),certificate=new X509Certificate(ssl.ca!.at(-1)!);
+  expect(certificate.subject).toContain('Supabase Root 2021 CA');
+  expect(certificate.ca).toBe(true);expect(ssl.rejectUnauthorized).toBe(true);
+});
 it('rolls back partial writes and preserves sessions and room data across restarts',async()=>{
   const folder=mkdtempSync(join(tmpdir(),'monopoly-storage-')),file=join(folder,'accounts.sqlite');
   let db=openDatabase(file);
