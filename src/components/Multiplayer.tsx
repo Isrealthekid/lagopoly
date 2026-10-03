@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Copy, DoorOpen, Globe, Lock, LogOut, Plus, RefreshCw, UserRound } from 'lucide-react';
+import { Check, Copy, DoorOpen, Globe, Lock, LogOut, Plus, RefreshCw, Share2, UserRound } from 'lucide-react';
 import { api, type Account, type OnlineRoom } from '../online/api';
 import { Modal } from './Modal';
 
@@ -8,6 +8,19 @@ export function Multiplayer({account,onAccount,onGame,close,currentRoom}:{accoun
   const [room,setRoom]=useState<OnlineRoom|null>(null),[rooms,setRooms]=useState<{code:string;host:string;count:number;cap:number}[]>([]);
   const [code,setCode]=useState(new URLSearchParams(location.search).get('room')??''),[cap,setCap]=useState(4),[isPublic,setPublic]=useState(false);
   const [error,setError]=useState<string|null>(null),[busy,setBusy]=useState(false),[copied,setCopied]=useState(false);
+  const [shareFallback,setShareFallback]=useState('');
+  useEffect(()=>{setCopied(false);setShareFallback('');},[room?.code]);
+  const roomLink=()=>{const link=new URL('/',location.origin);link.searchParams.set('room',room!.code);return link.toString();};
+  const copyLink=async()=>{
+    const link=roomLink();
+    try{await navigator.clipboard.writeText(link);setCopied(true);setShareFallback('');}
+    catch{setShareFallback(link);setCopied(false);}
+  };
+  const shareLink=async()=>{
+    if(!navigator.share){await copyLink();return;}
+    try{await navigator.share({title:'MONOPOLY - LAG-EDITION',text:`Join my room ${room!.code}`,url:roomLink()});}
+    catch(e){if(e instanceof Error&&e.name==='AbortError')return;await copyLink();}
+  };
   const busyRef=useRef(false);
   const run=async(fn:()=>Promise<void>)=>{if(busyRef.current)return;busyRef.current=true;setBusy(true);setError(null);try{await fn();}catch(e){setError(e instanceof Error?e.message:'Request failed.');}finally{busyRef.current=false;setBusy(false);}};
   const load=async()=>{
@@ -40,7 +53,10 @@ export function Multiplayer({account,onAccount,onGame,close,currentRoom}:{accoun
       <button className="primary full" disabled={busy}><UserRound size={18}/>{busy?'Please wait...':register?'Create account':'Sign in'}</button>
     </form>:<>
       <div className="account-row"><span><UserRound size={18}/>{account.username}</span><button className="icon-button" title="Sign out" aria-label="Sign out" disabled={busy} onClick={()=>void run(async()=>{await api('/logout',{});onAccount(null);setRoom(null);})}><LogOut size={18}/></button></div>
-      {room?<div className="room-lobby"><div className="room-heading"><h3>{room.code}</h3><span>{room.public?<Globe size={16}/>:<Lock size={16}/>} {room.members.length}/{room.cap}</span><button className="icon-button" title="Copy room link" aria-label="Copy room link" onClick={()=>void run(async()=>{const link=new URL(location.href);link.searchParams.set('room',room.code);await navigator.clipboard.writeText(link.toString());setCopied(true);})}>{copied?<Check size={18}/>:<Copy size={18}/>}</button></div>
+      {room?<div className="room-lobby"><div className="room-heading"><h3>{room.code}</h3><span>{room.public?<Globe size={16}/>:<Lock size={16}/>} {room.members.length}/{room.cap}</span><button className="icon-button" title="Copy room link" aria-label="Copy room link" disabled={busy} onClick={()=>void run(copyLink)}>{copied?<Check size={18}/>:<Copy size={18}/>}</button></div>
+        <button className="secondary full" disabled={busy} onClick={()=>void run(shareLink)}><Share2 size={18}/>Share room link</button>
+        {copied&&<p role="status">Room link copied.</p>}
+        {shareFallback&&<label className="room-share-fallback">Room link<input aria-label="Room link" readOnly value={shareFallback} onFocus={e=>e.target.select()}/></label>}
         <ul className="room-members">{room.members.map(member=><li key={member.id}><span>{member.username}{member.id===room.host?' (host)':''}</span><span>{member.ready?'Ready':'Waiting'}</span></li>)}</ul>
         {!room.game&&<label className="ready-toggle"><input type="checkbox" checked={room.members[room.seat]?.ready??false} disabled={busy} onChange={e=>{const ready=e.target.checked;setRoom({...room,members:room.members.map((m,i)=>i===room.seat?{...m,ready}:m)});void run(async()=>{try{const result=await api<{room:OnlineRoom}>(`/rooms/${room.code}/ready`,{ready});setRoom(result.room);}catch(error){setRoom(room);throw error;}});}}/>Ready to play</label>}
         {room.game&&<button className="primary full" onClick={()=>onGame(room)}>Return to game</button>}

@@ -17,6 +17,8 @@
 .room-create select{padding:10px}
 .room-join{display:grid;grid-template-columns:1fr auto;align-items:end;gap:10px;margin:20px 0}
 .room-lobby .full{margin-bottom:12px}
+.room-share-fallback{display:grid;gap:8px;font-size:12px;margin-bottom:16px}
+.room-share-fallback input{width:100%;min-width:0;padding:12px;border:1px solid #d4d4cb;border-radius:4px;background:white}
 .open-rooms{display:grid;margin-top:14px}
 .open-room{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:14px 0;border:0;border-bottom:1px solid #deded8;background:none;text-align:left;font-size:12px}
 .waiting-player{font-size:13px;color:#78786d;padding:8px 0}
