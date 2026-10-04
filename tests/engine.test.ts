@@ -27,7 +27,21 @@ describe('Lagos board definition',()=>{
     expect(lagos.spaces.filter(s=>s.group==='pink').map(s=>s.name)).toEqual(['Mushin','Yaba','Surulere']);
     expect(lagos.spaces.filter(s=>s.group==='navy').map(s=>s.name)).toEqual(['Bourdillon','Banana Island']);
     expect(lagos.spaces.filter(s=>s.group==='green').map(s=>s.name)).toEqual(['Lekki','Ikoyi','Eko Atlantic']);
-    expect(lagos.community).toHaveLength(16);expect(lagos.chance).toHaveLength(16);
+    expect(lagos.community).toHaveLength(18);expect(lagos.chance).toHaveLength(24);
+  });
+  it('applies Lagos event credits and debits and labels detention Kirikiri',()=>{
+    const amounts:Record<string,number>={CC02:50000,CC03:-100000,CC08:5000,CC10:40000,CC11:-100000,CC15:10000,CH13:-120000,CH17:-20000,CH18:-200000,CH19:-250000,CH20:-80000,CH21:-70000};
+    for(const [id,amount] of Object.entries(amounts)){
+      const community=id.startsWith('CC');let g=fresh();
+      const deck=community?'community':'chance';g[deck]=[id,...g[deck].filter(c=>c!==id)];
+      g.players[0].position=community?1:4;
+      g=act(g,{type:'roll'},1,2);
+      g=act(g,{type:'card'});
+      expect(g.players[0].cash,id).toBe(lagos.startingCash+amount);
+    }
+    expect(lagos.spaces[10].name).toContain('Kirikiri');
+    expect(lagos.spaces[30].name).toBe('Go to Kirikiri');
+    expect(new Set([...lagos.community,...lagos.chance].map(c=>c.id)).size).toBe(42);
   });
 });
 describe('movement, turns and payments',()=>{

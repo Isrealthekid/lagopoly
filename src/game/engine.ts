@@ -67,7 +67,7 @@ function nextTurn(g: GameState) {
 function sendHolding(g: GameState) {
   const p = g.players[g.current]; p.position = 10; p.holding = true; p.attempts = 0;
   g.extraRoll = false; g.doubles = 0; g.phase = 'manage';
-  addLog(g, `${p.name} goes directly to Holding. No Start payment.`);
+  addLog(g, `${p.name} goes directly to Kirikiri. No Start payment.`);
 }
 function moveTo(g: GameState, to: number, forward: boolean) {
   const p = g.players[g.current], board = getBoard(g.boardId);
@@ -226,9 +226,9 @@ export function transition(state: GameState, action: Action, dice: () => number)
       addLog(g, `${p.name} rolls ${d[0]} + ${d[1]}.`);
       if (p.holding) {
         p.attempts++; g.extraRoll = false;
-        if (d[0] !== d[1] && p.attempts < 3) { g.phase = 'manage'; addLog(g, `${p.name} stays in Holding (${p.attempts}/3 attempts).`); break; }
+        if (d[0] !== d[1] && p.attempts < 3) { g.phase = 'manage'; addLog(g, `${p.name} stays in Kirikiri (${p.attempts}/3 attempts).`); break; }
         p.holding = false; p.attempts = 0;
-        if (d[0] !== d[1]) { g.pendingMove = d[0] + d[1]; g.afterPayments = 'move'; payment(g, p.id, null, board.releaseFee, 'Holding release'); drain(g, dice); break; }
+        if (d[0] !== d[1]) { g.pendingMove = d[0] + d[1]; g.afterPayments = 'move'; payment(g, p.id, null, board.releaseFee, 'Kirikiri release'); drain(g, dice); break; }
       } else {
         g.extraRoll = d[0] === d[1]; g.doubles = g.extraRoll ? g.doubles + 1 : 0;
         if (g.doubles === 3) { sendHolding(g); break; }
@@ -236,9 +236,9 @@ export function transition(state: GameState, action: Action, dice: () => number)
       moveTo(g, (p.position + d[0] + d[1]) % 40, true); resolveSpace(g, dice); break;
     }
     case 'release': {
-      requireRule(g.phase === 'roll' && p.holding, 'You are not waiting in Holding.');
+      requireRule(g.phase === 'roll' && p.holding, 'You are not waiting in Kirikiri.');
       if (action.method === 'card') { requireRule(p.cards.length, 'No release card available.'); const id = p.cards.shift()!; (id.startsWith('CC') ? g.community : g.chance).push(id); addLog(g, `${p.name} uses a release card.`); }
-      else { payment(g, p.id, null, board.releaseFee, 'Holding release'); g.afterPayments = 'roll'; }
+      else { payment(g, p.id, null, board.releaseFee, 'Kirikiri release'); g.afterPayments = 'roll'; }
       p.holding = false; p.attempts = 0; g.doubles = 0; g.afterPayments = 'roll'; drain(g, dice); break;
     }
     case 'end': requireRule(g.phase === 'manage', 'Resolve the space before ending your turn.'); if (g.extraRoll) { g.phase = 'roll'; g.extraRoll = false; } else nextTurn(g); break;
